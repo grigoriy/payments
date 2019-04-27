@@ -4,6 +4,7 @@ Simple and to the point RESTful API (including data model and the backing
 implementation) for money transfers between accounts.
 
 ### Notes about the project:
+* API is described in an OpenAPI spec
 * may be invoked by multiple systems and services on behalf of end users
 * avoids using heavy frameworks
 * data store runs in memory

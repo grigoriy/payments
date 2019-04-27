@@ -1,0 +1,166 @@
+openapi: 3.0.1
+
+info:
+  title: Money Transfer API
+  description: |-
+    API for money transfers between accounts which may be invoked by multiple
+    systems and services on behalf of end users.
+  version: 1.0.0
+
+servers:
+  - url: 'https://{host}:{port}'
+    variables:
+      host:
+        default: localhost
+      port:
+        default: 80
+
+paths:
+
+  /accounts:
+
+    post:
+      summary: Create an account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Account'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountId'
+
+    get:
+      summary: Get all accounts.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+
+  /accounts/{id}:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          $ref: '#/components/schemas/AccountId'
+        required: true
+        description: The account id
+
+    get:
+      summary: Get an account by its id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: An error message
+        '404':
+          description: An account with the given id was not found
+
+  /transfers:
+
+    post:
+      summary: Create a money transfer request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transfer'
+      responses:
+        '201':
+          description: Created
+
+    get:
+      summary: Get all transfers
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transfer'
+
+  /transfers/{id}:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          $ref: '#/components/schemas/TransferId'
+        required: true
+        description: The transfer id
+
+    get:
+      summary: Get an transfer by its id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '400':
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: An error message
+        '404':
+          description: A transfer with the given id was not found
+
+components:
+  schemas:
+
+    Account:
+      properties:
+        id:
+          $ref: '#/components/schemas/AccountId'
+        money:
+          $ref: '#/components/schemas/Money'
+      required:
+        - id
+        - money
+
+    Transfer:
+      properties:
+        id:
+          $ref: '#/components/schemas/TransferId'
+        sender:
+          $ref: '#/components/schemas/AccountId'
+        reciever:
+          $ref: '#/components/schemas/AccountId'
+        money:
+          $ref: '#/components/schemas/Money'
+      required:
+        - id
+        - money
+
+    AccountId:
+      type: integer
+
+    Money:
+      type: integer
+
+    TransferId:
+      type: integer
