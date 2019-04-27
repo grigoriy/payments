@@ -1,0 +1,29 @@
+### Intellij Idea
+.idea/
+*.iws
+out/
+
+### Linux
+*~
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
+
+### SBT
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+.history
+.cache
+.lib/
+
+### Scala
+*.class
+*.log
+*.jar
+
+/checklist.md
