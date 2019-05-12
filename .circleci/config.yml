@@ -35,7 +35,7 @@ jobs:
             # generate the same cache key
             v1-dependencies--{{ checksum "build.sbt" }}
 
-      - run: sbt coverage test coverageReport coverageOff
+      - run: sbt coverage test it:test coverageReport coverageOff
 
       - run: sbt scalafmtCheckAll
 

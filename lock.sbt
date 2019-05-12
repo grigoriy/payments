@@ -8,9 +8,30 @@ dependencyOverrides ++= {
     Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "ch.qos.logback" % "logback-core" % "1.2.3",
+      "com.fasterxml.jackson.core" % "jackson-annotations" % "2.9.8",
+      "com.fasterxml.jackson.core" % "jackson-core" % "2.9.8",
+      "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.8",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.9.8",
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.9.8",
+      "com.typesafe" % "config" % "1.3.4",
+      "com.typesafe" % "ssl-config-core_2.12" % "0.3.7",
+      "com.typesafe.akka" % "akka-actor_2.12" % "2.5.22",
+      "com.typesafe.akka" % "akka-http-core_2.12" % "10.1.8",
+      "com.typesafe.akka" % "akka-http_2.12" % "10.1.8",
+      "com.typesafe.akka" % "akka-parsing_2.12" % "10.1.8",
+      "com.typesafe.akka" % "akka-protobuf_2.12" % "2.5.22",
+      "com.typesafe.akka" % "akka-stream_2.12" % "2.5.22",
+      "com.typesafe.play" % "play-functional_2.12" % "2.7.3",
+      "com.typesafe.play" % "play-json_2.12" % "2.7.3",
       "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.2",
-      "org.slf4j" % "slf4j-api" % "1.7.25"
+      "de.heikoseeberger" % "akka-http-play-json_2.12" % "1.25.2",
+      "joda-time" % "joda-time" % "2.10.1",
+      "org.reactivestreams" % "reactive-streams" % "1.0.2",
+      "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
+      "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.1",
+      "org.slf4j" % "slf4j-api" % "1.7.25",
+      "org.typelevel" % "macro-compat_2.12" % "1.1.1"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 51ccd8116183aace05288048b66193c1d48074e0
+// LIBRARY_DEPENDENCIES_HASH b943df345c60772b7f3ff354b50a798d27b9ca40
