@@ -16,12 +16,10 @@ class SynchronizedAccountService(dao: Dao[Account, AccountId], idGenerator: Acco
     for {
       _ <- validateAmount(request.amount)
       id = idGenerator.generate()
-      account <- callWithWriteLocks(
-        Seq(id),
-        () =>
-          dao
-            .add(Account(id, request.amount))
-            .toRight(AccountExists(id))
+      account <- callWithWriteLocks(Seq(id), () =>
+        dao
+          .add(Account(id, request.amount))
+          .toRight(AccountExists(id))
       )
     } yield account.id
 
