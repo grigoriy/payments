@@ -1,22 +1,23 @@
 package com.galekseev.payments.core.synched
 
 import com.galekseev.payments.core.AccountService.validateAmount
-import com.galekseev.payments.core.{AccountService, TransferService}
-import com.galekseev.payments.dto.PaymentError.{NegativeAmount, NoSuchAccount, NoSuchTransfer}
-import com.galekseev.payments.dto.Transfer.Status.{Completed, Declined}
+import com.galekseev.payments.core.{ AccountService, TransferService }
+import com.galekseev.payments.dto.PaymentError.{ NegativeAmount, NoSuchAccount, NoSuchTransfer }
+import com.galekseev.payments.dto.Transfer.Status.{ Completed, Declined }
 import com.galekseev.payments.dto._
 import com.galekseev.payments.storage.synched.Dao
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.util.control.NonFatal
 
-class SynchronizedTransferService(transferDao: Dao[Transfer, TransferId],
-                                  accountService: AccountService,
-                                  accountDao: Dao[Account, AccountId],
-                                  idGenerator: TransferIdGenerator
-                                 )(implicit accountLockService: LockService[AccountId],
-                                   transferLockService: LockService[TransferId])
-  extends TransferService with StrictLogging {
+class SynchronizedTransferService(
+  transferDao: Dao[Transfer, TransferId],
+  accountService: AccountService,
+  accountDao: Dao[Account, AccountId],
+  idGenerator: TransferIdGenerator
+)(implicit accountLockService: LockService[AccountId],
+  transferLockService: LockService[TransferId])
+    extends TransferService with StrictLogging {
 
   override def makeTransfer(request: TransferRequest): Either[TransferError, Transfer] =
     for {

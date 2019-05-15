@@ -3,16 +3,16 @@ package com.galekseev.payments.transport
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.MethodDirectives.{get, post}
+import akka.http.scaladsl.server.directives.MethodDirectives.{ get, post }
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import com.galekseev.payments.core.AccountService
-import com.galekseev.payments.dto.PaymentError.{AccountExists, NegativeAmount}
-import com.galekseev.payments.dto.{AccountId, AccountRequest}
+import com.galekseev.payments.dto.PaymentError.{ AccountExists, NegativeAmount }
+import com.galekseev.payments.dto.{ AccountId, AccountRequest }
 import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 class AccountRoutes(accountService: AccountService)
-  extends StrictLogging
+    extends StrictLogging
     with PlayJsonSupport
     with DiscreteExceptionHandling {
 

@@ -1,24 +1,24 @@
 package com.galekseev.payments
 
-import akka.actor.{ActorSystem, Terminated}
+import akka.actor.{ ActorSystem, Terminated }
 import akka.event.Logging
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import akka.http.scaladsl.server.{ ExceptionHandler, Route }
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.stream.ActorMaterializer
 import com.galekseev.payments.core.synched._
-import com.galekseev.payments.dto.{Account, AccountId, Transfer, TransferId}
+import com.galekseev.payments.dto.{ Account, AccountId, Transfer, TransferId }
 import com.galekseev.payments.storage.synched.Dao
-import com.galekseev.payments.transport.{AccountRoutes, TransferRoutes}
+import com.galekseev.payments.transport.{ AccountRoutes, TransferRoutes }
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 
 object Main extends App with StrictLogging {
 

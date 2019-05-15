@@ -37,6 +37,6 @@ object PaymentError {
     case a: AccountExists          => AccountExists.writes.writes(a)
     case a: NoSuchAccount          => NoSuchAccount.writes.writes(a)
     case a: InsufficientFunds.type => InsufficientFunds.writes.writes(a)
-    case a: NoSuchTransfer          => NoSuchTransfer.writes.writes(a)
+    case a: NoSuchTransfer         => NoSuchTransfer.writes.writes(a)
   }
 }
