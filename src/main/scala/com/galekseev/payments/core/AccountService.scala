@@ -9,6 +9,8 @@ trait AccountService {
 
   def get(id: AccountId): Either[NoSuchAccount, Account]
 
+  def get: Traversable[Account]
+
   def deposit(id: AccountId, amountCents: Long): Either[DepositError, Account]
 
   def withdraw(id: AccountId, amountCents: Long): Either[WithdrawalError, Account]

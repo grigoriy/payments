@@ -2,6 +2,7 @@ package com.galekseev.payments.core.synched
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.{ ReadWriteLock, ReentrantReadWriteLock }
+import scala.collection.JavaConverters._
 
 import com.galekseev.payments.core.synched.LockService.LockType
 
@@ -11,13 +12,14 @@ class LockService[A](implicit conv: A => Ordered[A]) {
 
   private val locks = new ConcurrentHashMap[A, ReadWriteLock]()
 
-  def callWithReadLocks[B](ids: Seq[A], f: () => B): B = {
+  def callWithReadLocks[B](ids: Seq[A], f: () => B): B =
     withLocks(ids, Read, f)
-  }
 
-  def callWithWriteLocks[B](ids: Seq[A], f: () => B): B = {
+  def callWithAllReadLocks[B](f: () => B): B =
+    withLocks(locks.keys().asScala.toSeq, Read, f)
+
+  def callWithWriteLocks[B](ids: Seq[A], f: () => B): B =
     withLocks(ids, Write, f)
-  }
 
   private def withLocks[B](ids: Seq[A], lockType: LockType, f: () => B): B = {
     val locks = ids.sorted.map(

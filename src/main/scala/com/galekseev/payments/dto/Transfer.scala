@@ -5,8 +5,12 @@ import java.util.UUID
 import com.galekseev.payments.dto.Transfer.Status
 import play.api.libs.json._
 
-case class Transfer(id: TransferId, from: AccountId, to: AccountId, amount: Long, status: Status)
-    extends HasId[TransferId]
+case class Transfer(id: TransferId,
+                    from: AccountId,
+                    to: AccountId,
+                    amount: Long,
+                    status: Status)
+  extends HasId[TransferId]
 
 object Transfer {
 
@@ -30,7 +34,7 @@ object Transfer {
       }
 
       val writes: Writes[Declined] = {
-        case a @ InsufficientFunds => Json.toJson(a)
+        case a: InsufficientFunds.type => Json.toJson(a)(InsufficientFunds.writes)
       }
     }
 
@@ -55,9 +59,7 @@ object TransferId {
   implicit val ordering: Ordering[TransferId] = Ordering.by(_.id)
 }
 
-case class TransferRequest(requestId: UUID, from: AccountId, to: AccountId, amount: Long) {
-  require(amount > 0, s"The amount to transfer must be positive. Got [$amount]")
-}
+case class TransferRequest(requestId: UUID, from: AccountId, to: AccountId, amount: Long)
 
 object TransferRequest {
   implicit val format: Format[TransferRequest] = Json.format[TransferRequest]

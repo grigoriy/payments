@@ -5,6 +5,7 @@ import java.util.concurrent.ConcurrentHashMap
 import com.galekseev.payments.core.synched.LockService
 import com.galekseev.payments.dto.HasId
 import com.typesafe.scalalogging.StrictLogging
+import scala.collection.JavaConverters._
 
 class Dao[A <: HasId[Id], Id](implicit lockService: LockService[Id]) extends StrictLogging {
   private val idToA = new ConcurrentHashMap[Id, A]()
@@ -22,6 +23,9 @@ class Dao[A <: HasId[Id], Id](implicit lockService: LockService[Id]) extends Str
           case None    => Some(a)
         }
     )
+
+  def get: Traversable[A] =
+    lockService.callWithAllReadLocks(() => idToA.values().asScala)
 
   def get(id: Id): Option[A] =
     lockService.callWithReadLocks(Seq(id), () => Option(idToA.get(id)))

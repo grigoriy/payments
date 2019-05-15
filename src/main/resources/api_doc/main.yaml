@@ -47,6 +47,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+    get:
+      summary: Get all accounts
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+
   /accounts/{id}:
     parameters:
       - in: path
@@ -98,17 +110,73 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-#    get:
-#      summary: Get all transfers
-#      responses:
-#        '200':
-#          description: OK
-#          content:
-#            application/json:
-#              schema:
-#                type: array
-#                items:
-#                  $ref: '#/components/schemas/Transfer'
+    get:
+      summary: Get all transfers
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transfer'
+
+  /transfers?accountId={accId}:
+    parameters:
+      - in: query
+        name: accId
+        schema:
+          $ref: '#/components/schemas/AccountId'
+        required: true
+        description: The account id
+
+    get:
+      summary: Get transfers by account ID
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transfer'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: A transfer with the given id was not found
+
+  /transfers/{id}:
+    parameters:
+      - in: path
+        name: id
+        schema:
+          $ref: '#/components/schemas/TransferId'
+        required: true
+        description: The transfer id
+
+    get:
+      summary: Get a transfer by its id
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: A transfer with the given id was not found
 
 components:
   schemas:
@@ -117,8 +185,6 @@ components:
       properties:
         requestId:
           $ref: '#/components/schemas/RequestId'
-        systemId:
-          $ref: '#/components/schemas/SystemId'
         balance:
           $ref: '#/components/schemas/Money'
       required:
@@ -127,11 +193,6 @@ components:
         - balance
 
     RequestId:
-      type: string
-      format: uuid
-
-    SystemId:
-      description: Unique identifier of a client system
       type: string
       format: uuid
 
@@ -149,8 +210,7 @@ components:
         - balance
 
     AccountId:
-      type: string
-      format: uuid
+      type: integer
 
     Money:
       type: integer
@@ -160,8 +220,6 @@ components:
       properties:
         requestId:
           $ref: '#/components/schemas/RequestId'
-        systemId:
-          $ref: '#/components/schemas/SystemId'
         sender:
           $ref: '#/components/schemas/AccountId'
         receiver:
@@ -197,8 +255,7 @@ components:
         - status
 
     TransferId:
-      type: string
-      format: uuid
+      type: integer
 
     TransferStatus:
       type: string

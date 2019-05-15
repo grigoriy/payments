@@ -14,13 +14,11 @@ object PaymentError {
   }
 
   case class AccountExists(id: AccountId) extends AccountCreationError
-
   object AccountExists {
     val writes: OWrites[AccountExists] = Json.writes[AccountExists]
   }
 
-  case class NoSuchAccount(ids: AccountId) extends WithdrawalError with DepositError
-
+  case class NoSuchAccount(id: AccountId) extends WithdrawalError with DepositError
   object NoSuchAccount {
     val writes: OWrites[NoSuchAccount] = Json.writes[NoSuchAccount]
   }
@@ -29,10 +27,16 @@ object PaymentError {
     val writes: Writes[InsufficientFunds.type] = (o: InsufficientFunds.type) => Json.toJson(o.toString)
   }
 
+  case class NoSuchTransfer(id: TransferId) extends PaymentError
+  object NoSuchTransfer {
+    val writes: OWrites[NoSuchTransfer] = Json.writes[NoSuchTransfer]
+  }
+
   implicit val writes: Writes[PaymentError] = {
     case a: NegativeAmount.type    => NegativeAmount.writes.writes(a)
     case a: AccountExists          => AccountExists.writes.writes(a)
     case a: NoSuchAccount          => NoSuchAccount.writes.writes(a)
     case a: InsufficientFunds.type => InsufficientFunds.writes.writes(a)
+    case a: NoSuchTransfer          => NoSuchTransfer.writes.writes(a)
   }
 }
