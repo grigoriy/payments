@@ -8,6 +8,7 @@ dependencyOverrides ++= {
     Seq(
       "ch.qos.logback" % "logback-classic" % "1.2.3",
       "ch.qos.logback" % "logback-core" % "1.2.3",
+      "com.chuusai" % "shapeless_2.12" % "2.3.3",
       "com.fasterxml.jackson.core" % "jackson-annotations" % "2.9.8",
       "com.fasterxml.jackson.core" % "jackson-core" % "2.9.8",
       "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.8",
@@ -25,13 +26,15 @@ dependencyOverrides ++= {
       "com.typesafe.play" % "play-json_2.12" % "2.7.3",
       "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.2",
       "de.heikoseeberger" % "akka-http-play-json_2.12" % "1.25.2",
+      "eu.timepit" % "refined_2.12" % "0.9.5",
       "joda-time" % "joda-time" % "2.10.1",
       "org.reactivestreams" % "reactive-streams" % "1.0.2",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.1",
+      "org.scala-lang.modules" % "scala-xml_2.12" % "1.2.0",
       "org.slf4j" % "slf4j-api" % "1.7.25",
       "org.typelevel" % "macro-compat_2.12" % "1.1.1"
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH b943df345c60772b7f3ff354b50a798d27b9ca40
+// LIBRARY_DEPENDENCIES_HASH 703679d7d8048f4eefab491e38135d39ed7ccb69

@@ -17,7 +17,9 @@ class SynchronizedTransferService(
   transferLockService: LockService[TransferId])
     extends TransferService with StrictLogging {
 
-  @SuppressWarnings(Array("org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial", "org.wartremover.warts.Product", "org.wartremover.warts.Serializable"))
+  @SuppressWarnings(Array(
+    "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial",
+    "org.wartremover.warts.Product", "org.wartremover.warts.Serializable"))
   override def makeTransfer(request: TransferRequest): Either[TransferError, Transfer] = {
     val id = idGenerator.generate()
     accountLockService.callWithWriteLocks(Seq(request.from, request.to), () =>
