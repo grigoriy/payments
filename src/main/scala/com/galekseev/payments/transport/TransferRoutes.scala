@@ -6,8 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import com.galekseev.payments.core.TransferService
-import com.galekseev.payments.dto.PaymentError.{ NegativeAmount, NoSuchAccount }
-import com.galekseev.payments.dto.{ AccountId, PaymentError, TransferId, TransferRequest }
+import com.galekseev.payments.dto.{AccountId, TransferId, TransferRequest}
 import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
@@ -30,14 +29,8 @@ class TransferRoutes(transferService: TransferService)
                       logger.info(s"Processed the transfer [$transfer]")
                       complete(transfer)
                     case Left(error) =>
-                      error match {
-                        case NegativeAmount | NoSuchAccount(_) =>
-                          logger.info(s"Invalid transfer request [$transferReq]: [$error]")
-                          complete((StatusCodes.BadRequest, error))
-                        case PaymentError.InsufficientFunds =>
-                          logger.info(s"Insufficient funds for the transfer [$transferReq]")
-                          complete("Insufficient funds")
-                      }
+                      logger.info(s"Invalid transfer request [$transferReq]: [$error]")
+                      complete((StatusCodes.BadRequest, error))
                   }
                 }
               }

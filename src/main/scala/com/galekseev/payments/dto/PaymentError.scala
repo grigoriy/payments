@@ -1,15 +1,13 @@
 package com.galekseev.payments.dto
 
-import play.api.libs.json.{ Json, OWrites, Writes }
+import play.api.libs.json.{Json, OWrites, Writes}
 
 sealed trait PaymentError
 sealed trait TransferError extends PaymentError
-sealed trait WithdrawalError extends TransferError
-sealed trait DepositError extends TransferError
 sealed trait AccountCreationError extends PaymentError
 
 object PaymentError {
-  case object NegativeAmount extends WithdrawalError with DepositError with AccountCreationError {
+  case object NegativeAmount extends AccountCreationError {
     val writes: Writes[NegativeAmount.type] = (o: NegativeAmount.type) => Json.toJson(o.toString)
   }
 
@@ -18,12 +16,12 @@ object PaymentError {
     val writes: OWrites[AccountExists] = Json.writes[AccountExists]
   }
 
-  case class NoSuchAccount(id: AccountId) extends WithdrawalError with DepositError
+  case class NoSuchAccount(id: AccountId) extends TransferError
   object NoSuchAccount {
     val writes: OWrites[NoSuchAccount] = Json.writes[NoSuchAccount]
   }
 
-  case object InsufficientFunds extends WithdrawalError {
+  case object InsufficientFunds extends TransferError {
     val writes: Writes[InsufficientFunds.type] = (o: InsufficientFunds.type) => Json.toJson(o.toString)
   }
 

@@ -24,7 +24,7 @@ object Main extends App with StrictLogging {
 
   val conf = ConfigFactory.load()
 
-  implicit val system: ActorSystem = ActorSystem("MoneyTranserServer")
+  implicit val system: ActorSystem = ActorSystem("MoneyTransferServer")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
@@ -36,7 +36,7 @@ object Main extends App with StrictLogging {
   lazy private val transferIdGenerator = new TransferIdGenerator
   lazy private val accountService = new SynchronizedAccountService(accountDao, accountIdGenerator)
   lazy private val transferService =
-    new SynchronizedTransferService(transferDao, accountService, accountDao, transferIdGenerator)
+    new SynchronizedTransferService(transferDao, accountDao, transferIdGenerator)
 
   implicit val discreteExceptionHandler: ExceptionHandler =
     ExceptionHandler {

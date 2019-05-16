@@ -2,7 +2,7 @@ package com.galekseev.payments.dto
 
 import play.api.libs.json.{ Format, JsResult, JsValue, Json }
 
-case class Account(id: AccountId, amount: Long) extends HasId[AccountId]
+case class Account(id: AccountId, amount: Amount) extends HasId[AccountId]
 
 object Account {
   implicit val format: Format[Account] = Json.format
@@ -19,7 +19,7 @@ object AccountId {
   implicit val ordering: Ordering[AccountId] = Ordering.by(_.id)
 }
 
-case class AccountRequest(amount: Long)
+case class AccountRequest(amount: Amount)
 
 object AccountRequest {
   implicit val format: Format[AccountRequest] = Json.format

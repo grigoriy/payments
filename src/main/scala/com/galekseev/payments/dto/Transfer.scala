@@ -8,7 +8,7 @@ import play.api.libs.json._
 case class Transfer(id: TransferId,
                     from: AccountId,
                     to: AccountId,
-                    amount: Long,
+                    amount: Amount,
                     status: Status)
   extends HasId[TransferId]
 
@@ -59,8 +59,8 @@ object TransferId {
   implicit val ordering: Ordering[TransferId] = Ordering.by(_.id)
 }
 
-case class TransferRequest(requestId: UUID, from: AccountId, to: AccountId, amount: Long)
+case class TransferRequest(requestId: UUID, from: AccountId, to: AccountId, amount: Amount)
 
 object TransferRequest {
-  implicit val format: Format[TransferRequest] = Json.format[TransferRequest]
+  implicit val format: OFormat[TransferRequest] = Json.format[TransferRequest]
 }
