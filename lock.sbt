@@ -28,6 +28,7 @@ dependencyOverrides ++= {
       "de.heikoseeberger" % "akka-http-play-json_2.12" % "1.25.2",
       "eu.timepit" % "refined_2.12" % "0.9.5",
       "joda-time" % "joda-time" % "2.10.1",
+      "org.julienrf" % "play-json-derived-codecs_2.12" % "5.0.0",
       "org.reactivestreams" % "reactive-streams" % "1.0.2",
       "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
       "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.1.1",
@@ -37,4 +38,4 @@ dependencyOverrides ++= {
     )
   }
 }
-// LIBRARY_DEPENDENCIES_HASH 703679d7d8048f4eefab491e38135d39ed7ccb69
+// LIBRARY_DEPENDENCIES_HASH 0046bfbd5c568611ecfa96956aca841ee6df9294

@@ -1,7 +1,7 @@
 package com.galekseev.payments.dto
 
 import com.galekseev.payments.dto.Amount.NonNegativeBigInt
-import eu.timepit.refined.api.{Refined, Validate}
+import eu.timepit.refined.api.{ Refined, Validate }
 import eu.timepit.refined.numeric.NonNegative
 import eu.timepit.refined.refineV
 import play.api.libs.json._
@@ -30,7 +30,7 @@ object Amount {
         .reads(json)
         .flatMap { t: T =>
           refineV[P](t) match {
-            case Left(error) => JsError(error)
+            case Left(error)  => JsError(error)
             case Right(value) => JsSuccess(value)
           }
         }

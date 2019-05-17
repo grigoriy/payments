@@ -1,8 +1,8 @@
 package com.galekseev.payments.core.synched
 
 import com.galekseev.payments.core.TransferService
-import com.galekseev.payments.dto.PaymentError.{InsufficientFunds, NoSuchAccount, NoSuchTransfer, SameAccountTransfer}
-import com.galekseev.payments.dto.Transfer.Status.{Completed, Declined}
+import com.galekseev.payments.dto.PaymentError.{ InsufficientFunds, NoSuchAccount, NoSuchTransfer, SameAccountTransfer }
+import com.galekseev.payments.dto.Transfer.Status.{ Completed, Declined }
 import com.galekseev.payments.dto._
 import com.galekseev.payments.storage.synched.Dao
 import com.typesafe.scalalogging.StrictLogging
@@ -17,50 +17,54 @@ class SynchronizedTransferService(
   transferLockService: LockService[TransferId])
     extends TransferService with StrictLogging {
 
-  @SuppressWarnings(Array(
-    "org.wartremover.warts.Throw", "org.wartremover.warts.OptionPartial",
-    "org.wartremover.warts.Product", "org.wartremover.warts.Serializable"))
+  @SuppressWarnings(
+    Array(
+      "org.wartremover.warts.Throw",
+      "org.wartremover.warts.OptionPartial",
+      "org.wartremover.warts.Product",
+      "org.wartremover.warts.Serializable"
+    )
+  )
   override def makeTransfer(request: TransferRequest): Either[TransferError, Transfer] = {
     if (request.from == request.to) {
       Left(SameAccountTransfer)
     } else {
       val id = idGenerator.generate()
       accountLockService.callWithWriteLocks(Seq(request.from, request.to), () =>
-          transferLockService.callWithWriteLocks(Seq(id), () => {
-              val maybeFrom = accountDao.get(request.from)
-            val maybeTo = accountDao.get(request.to)
-            try {
-              (for {
-                from          <- maybeFrom
-                                  .toRight(NoSuchAccount(request.from))
-                to            <- maybeTo
-                                  .toRight(NoSuchAccount(request.to))
-                newFromAmount <- (from.amount - request.amount).toRight(InsufficientFunds)
-                _ <- accountDao.update(from.copy(amount = newFromAmount))
-                                .toRight(throw new RuntimeException("Should not happen"))
-                _ <- accountDao.update(to.copy(amount = to.amount + request.amount))
-                                .toRight(throw new RuntimeException("Should not happen"))
-              } yield {
-                Transfer.fromRequest(request, id, Completed)
-              }).left
-                .flatMap {
-                  case PaymentError.InsufficientFunds =>
-                    Right(Transfer.fromRequest(request, id, Declined.InsufficientFunds))
-                  case e =>
-                    Left(e)
-                }
-                .map(transferDao.add(_).get)
-            } catch {
-              case NonFatal(e) =>
-                logger.error(
-                  s"Failed to transfer [${request.amount}] from [${request.from} to [${request.to}]. Rolling back ...",
-                  e
-                )
-                maybeFrom.foreach(accountDao.update)
-                maybeTo.foreach(accountDao.update)
-                throw e
+        transferLockService.callWithWriteLocks(Seq(id), () => {
+          val maybeFrom = accountDao.get(request.from)
+          val maybeTo = accountDao.get(request.to)
+          try {
+            (for {
+              from <- maybeFrom.toRight(NoSuchAccount(request.from))
+              to <- maybeTo.toRight(NoSuchAccount(request.to))
+              newFromAmount <- (from.amount - request.amount).toRight(InsufficientFunds)
+              _ <- accountDao.update(from.copy(amount = newFromAmount))
+                .toRight(throw new RuntimeException("Should not happen"))
+              _ <- accountDao.update(to.copy(amount = to.amount + request.amount))
+                .toRight(throw new RuntimeException("Should not happen"))
+            } yield {
+              Transfer.fromRequest(request, id, Completed)
+            }).left
+              .flatMap {
+                case PaymentError.InsufficientFunds =>
+                  Right(Transfer.fromRequest(request, id, Declined.InsufficientFunds))
+                case e =>
+                  Left(e)
+              }
+              .map(transferDao.add(_).get)
+          } catch {
+            case NonFatal(e) =>
+              logger.error(
+                s"Failed to transfer [${request.amount}] from [${request.from} to [${request.to}]. Rolling back ...",
+                e
+              )
+              maybeFrom.foreach(accountDao.update)
+              maybeTo.foreach(accountDao.update)
+              throw e
+          }
             }
-          })
+          )
       )
     }
   }

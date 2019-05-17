@@ -1,7 +1,7 @@
 package com.galekseev.payments.core.synched
 
 import com.galekseev.payments.core.AccountService
-import com.galekseev.payments.dto.PaymentError.{AccountExists, NoSuchAccount}
+import com.galekseev.payments.dto.PaymentError.{ AccountExists, NoSuchAccount }
 import com.galekseev.payments.dto._
 import com.galekseev.payments.storage.synched.Dao
 
@@ -9,7 +9,7 @@ class SynchronizedAccountService(dao: Dao[Account, AccountId], idGenerator: Acco
   implicit accountLockService: LockService[AccountId]
 ) extends AccountService {
 
-  import accountLockService.{callWithAllReadLocks, callWithReadLocks, callWithWriteLocks}
+  import accountLockService.{ callWithAllReadLocks, callWithReadLocks, callWithWriteLocks }
 
   override def create(request: AccountRequest): Either[AccountExists, Account] = {
     val id = idGenerator.generate()
