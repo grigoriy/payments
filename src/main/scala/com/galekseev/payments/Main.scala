@@ -45,9 +45,7 @@ object Main extends App with StrictLogging {
         complete(StatusCodes.InternalServerError)
     }
   lazy val routes: Route = DebuggingDirectives.logRequestResult(("REST", Logging.DebugLevel))(
-    Route.seal(
-      new AccountRoutes(accountService).routes ~ new TransferRoutes(transferService).routes
-    )
+    new AccountRoutes(accountService).routes ~ new TransferRoutes(transferService).routes
   )
 
   val host = conf.getString("host")

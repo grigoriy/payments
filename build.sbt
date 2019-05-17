@@ -30,6 +30,7 @@ lazy val root = (project in file("."))
       "com.typesafe.play"           %% "play-json"            % "2.7.3",
       "de.heikoseeberger"           %% "akka-http-play-json"  % "1.25.2",
       "eu.timepit"                  %% "refined"              % "0.9.5",
+      "org.julienrf"                %% "play-json-derived-codecs" % "5.0.0",
       "com.typesafe"                 % "config"               % "1.3.4",
       "com.typesafe.scala-logging"  %% "scala-logging"        % "3.9.2",
       "ch.qos.logback"               % "logback-classic"      % "1.2.3",
@@ -41,7 +42,7 @@ lazy val root = (project in file("."))
       "org.scalacheck"              %% "scalacheck"           % "1.14.0"        % "test,it"
     ),
 
-    coverageMinimum := 86,
+    coverageMinimum := 90,
     coverageFailOnMinimum := true,
     coverageExcludedPackages := "com\\.galekseev\\.payments\\.Main",
 

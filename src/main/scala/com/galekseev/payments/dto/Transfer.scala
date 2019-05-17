@@ -22,29 +22,16 @@ object Transfer {
   sealed trait Status
 
   object Status {
-    case object Completed extends Status {
-      val writes: Writes[Completed.type] = (o: Completed.type) => Json.toJson(o.toString)
-    }
-
+    case object Completed extends Status
     sealed trait Declined extends Status
-
     object Declined {
-      case object InsufficientFunds extends Declined {
-        val writes: Writes[InsufficientFunds.type] = (o: InsufficientFunds.type) => Json.toJson(o.toString)
-      }
-
-      val writes: Writes[Declined] = {
-        case a: InsufficientFunds.type => Json.toJson(a)(InsufficientFunds.writes)
-      }
+      case object InsufficientFunds extends Declined
     }
 
-    implicit val writes: Writes[Status] = {
-      case a: Completed.type => Json.toJson(a)(Completed.writes)
-      case a: Declined       => Json.toJson(a)(Declined.writes)
-    }
+    implicit val format: Format[Status] = julienrf.json.derived.oformat()
   }
 
-  implicit val writes: OWrites[Transfer] = Json.writes[Transfer]
+  implicit val format: Format[Transfer] = julienrf.json.derived.oformat()
 }
 
 case class TransferId(id: Long) extends AnyVal
