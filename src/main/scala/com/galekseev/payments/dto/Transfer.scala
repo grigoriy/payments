@@ -1,7 +1,5 @@
 package com.galekseev.payments.dto
 
-import java.util.UUID
-
 import com.galekseev.payments.dto.Transfer.Status
 import play.api.libs.json._
 
@@ -11,7 +9,6 @@ case class Transfer(id: TransferId,
                     amount: Amount,
                     status: Status)
   extends HasId[TransferId]
-
 object Transfer {
 
   def fromRequest(request: TransferRequest, id: TransferId, status: Status): Transfer = {
@@ -20,7 +17,6 @@ object Transfer {
   }
 
   sealed trait Status
-
   object Status {
     case object Completed extends Status
     sealed trait Declined extends Status
@@ -35,7 +31,6 @@ object Transfer {
 }
 
 case class TransferId(id: Long) extends AnyVal
-
 object TransferId {
   implicit val format: Format[TransferId] = new Format[TransferId] {
     override def reads(json: JsValue): JsResult[TransferId] =
@@ -46,8 +41,7 @@ object TransferId {
   implicit val ordering: Ordering[TransferId] = Ordering.by(_.id)
 }
 
-case class TransferRequest(requestId: UUID, from: AccountId, to: AccountId, amount: Amount)
-
+case class TransferRequest(from: AccountId, to: AccountId, amount: Amount)
 object TransferRequest {
   implicit val format: OFormat[TransferRequest] = Json.format[TransferRequest]
 }

@@ -1,7 +1,5 @@
 package com.galekseev.payments
 
-import java.util.UUID
-
 import com.galekseev.payments.core.synched._
 import com.galekseev.payments.dto.Amount.NonNegativeBigInt
 import com.galekseev.payments.dto._
@@ -35,7 +33,6 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with Strict
 //        logger.info(s"Total amount: $totalAmount")
 
         (1 to 100).map(_ => transferService.makeTransfer(TransferRequest(
-          UUID.randomUUID(),
           accounts(Random.nextInt(accounts.size)).id,
           accounts(Random.nextInt(accounts.size)).id,
           Amount(randomNonNegativeBigInt)

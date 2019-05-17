@@ -1,7 +1,5 @@
 package com.galekseev.payments
 
-import java.util.UUID
-
 import akka.event.Logging
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
@@ -130,9 +128,8 @@ class EndToEndSpec
         entityAs[Account] should ===(account_3)
       }
 
-      val negativeTransferRequest: JsObject = Json.toJsObject(
-        TransferRequest(UUID.randomUUID(), account_1.id, account_2.id, transferAmount)
-      ) ++ Json.obj("amount" -> Json.obj("cents" -> Json.toJson(-4L)))
+      val negativeTransferRequest: JsObject = Json.toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++
+        Json.obj("amount" -> Json.obj("cents" -> Json.toJson(-4L)))
       Post("/transfers").withEntity(Marshal(negativeTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
       }
@@ -158,7 +155,7 @@ class EndToEndSpec
       }
 
       val nonExistentAccountId = AccountId(4L)
-      val nonExistentSenderTransferRequest = TransferRequest(UUID.randomUUID(), nonExistentAccountId, account_2.id, transferAmount)
+      val nonExistentSenderTransferRequest = TransferRequest(nonExistentAccountId, account_2.id, transferAmount)
       Post("/transfers").withEntity(Marshal(nonExistentSenderTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
         val error = entityAs[PaymentError]
@@ -185,7 +182,7 @@ class EndToEndSpec
         entityAs[Seq[Transfer]] shouldBe empty
       }
 
-      val nonExistentReceiverTransferRequest = TransferRequest(UUID.randomUUID(), account_1.id, nonExistentAccountId, transferAmount)
+      val nonExistentReceiverTransferRequest = TransferRequest(account_1.id, nonExistentAccountId, transferAmount)
       Post("/transfers").withEntity(Marshal(nonExistentReceiverTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
         status should ===(StatusCodes.BadRequest)
         val error = entityAs[PaymentError]
@@ -212,7 +209,7 @@ class EndToEndSpec
         entityAs[Seq[Transfer]] shouldBe empty
       }
 
-      val insufficientFundsTransferRequest = TransferRequest(UUID.randomUUID(), account_1.id, account_3.id, Amount(BigInt(Long.MaxValue)))
+      val insufficientFundsTransferRequest = TransferRequest(account_1.id, account_3.id, Amount(BigInt(Long.MaxValue)))
       Post("/transfers").withEntity(Marshal(insufficientFundsTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
         status should ===(StatusCodes.OK)
         val transfer = entityAs[Transfer]
@@ -240,7 +237,7 @@ class EndToEndSpec
         entityAs[Seq[Transfer]] shouldBe Seq(Transfer.fromRequest(insufficientFundsTransferRequest, insufficientFundsTransferId, InsufficientFunds))
       }
 
-      val transferRequest = TransferRequest(UUID.randomUUID(), account_1.id, account_2.id, transferAmount)
+      val transferRequest = TransferRequest(account_1.id, account_2.id, transferAmount)
       Post("/transfers").withEntity(Marshal(transferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
         status should ===(StatusCodes.OK)
         val transfer: Transfer = entityAs[Transfer]
