@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.post
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import com.galekseev.payments.core.TransferService
-import com.galekseev.payments.dto.{ AccountId, TransferId, TransferRequest }
+import com.galekseev.payments.dto.TransferRequest
 import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
@@ -16,9 +16,7 @@ class TransferRoutes(transferService: TransferService)
     with DiscreteExceptionHandling {
 
   lazy val routes: Route =
-    pathPrefix("transfers") {
-      concat(
-        pathEnd {
+    path("transfers") {
           concat(
 
             post {
@@ -36,27 +34,7 @@ class TransferRoutes(transferService: TransferService)
               }
             }
 
-            , get {
-              parameter('accId.as[Long]) { accId =>
-                complete(transferService.getByAccount(AccountId(accId)))
-              }
-            }
-
             , get { complete(transferService.get) }
           )
-        },
-
-        path(LongNumber) { id =>
-
-          get {
-            rejectEmptyResponse {
-              complete(
-                transferService.get(TransferId(id)).toOption
-              )
-            }
-          }
-
         }
-      )
-    }
 }

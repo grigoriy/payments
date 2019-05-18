@@ -40,12 +40,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Account'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
     get:
       summary: Get all accounts
@@ -58,33 +52,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Account'
-
-  /accounts/{id}:
-    parameters:
-      - in: path
-        name: id
-        schema:
-          $ref: '#/components/schemas/AccountId'
-        required: true
-        description: The account id
-
-    get:
-      summary: Get an account by its id
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Account'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: An account with the given id was not found
 
   /transfers:
 
@@ -103,12 +70,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/TransferId'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
     get:
       summary: Get all transfers
@@ -122,89 +83,24 @@ paths:
                 items:
                   $ref: '#/components/schemas/Transfer'
 
-  /transfers?accountId={accId}:
-    parameters:
-      - in: query
-        name: accId
-        schema:
-          $ref: '#/components/schemas/AccountId'
-        required: true
-        description: The account id
-
-    get:
-      summary: Get transfers by account ID
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Transfer'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: A transfer with the given id was not found
-
-  /transfers/{id}:
-    parameters:
-      - in: path
-        name: id
-        schema:
-          $ref: '#/components/schemas/TransferId'
-        required: true
-        description: The transfer id
-
-    get:
-      summary: Get a transfer by its id
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Transfer'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: A transfer with the given id was not found
-
 components:
   schemas:
 
     AccountRequest:
       properties:
-        requestId:
-          $ref: '#/components/schemas/RequestId'
         balance:
-          $ref: '#/components/schemas/Money'
+          $ref: '#/components/schemas/AmountInCents'
       required:
         - requestId
         - systemId
         - balance
-
-    RequestId:
-      type: string
-      format: uuid
-
-    Error:
-      type: string
 
     Account:
       properties:
         id:
           $ref: '#/components/schemas/AccountId'
         balance:
-          $ref: '#/components/schemas/Money'
+          $ref: '#/components/schemas/AmountInCents'
       required:
         - id
         - balance
@@ -212,23 +108,19 @@ components:
     AccountId:
       type: integer
 
-    Money:
+    AmountInCents:
       type: integer
       description: non-negative amount in cents
 
     TransferRequest:
       properties:
-        requestId:
-          $ref: '#/components/schemas/RequestId'
         sender:
           $ref: '#/components/schemas/AccountId'
         receiver:
           $ref: '#/components/schemas/AccountId'
         amount:
-          $ref: '#/components/schemas/Money'
+          $ref: '#/components/schemas/AmountInCents'
       required:
-        - requestId
-        - systemId
         - sender
         - receiver
         - amount
@@ -242,7 +134,7 @@ components:
         receiver:
           $ref: '#/components/schemas/AccountId'
         amount:
-          $ref: '#/components/schemas/Money'
+          $ref: '#/components/schemas/AmountInCents'
         status:
           $ref: '#/components/schemas/TransferStatus'
         reasonOfDecline:
@@ -259,4 +151,4 @@ components:
 
     TransferStatus:
       type: string
-      enum: [completed, declined]
+      enum: [Completed, InsufficientFunds]

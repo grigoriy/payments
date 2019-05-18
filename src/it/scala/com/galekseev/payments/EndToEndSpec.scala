@@ -7,8 +7,9 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import com.galekseev.payments.core.synched._
-import com.galekseev.payments.dto.PaymentError.NoSuchAccount
+import com.galekseev.payments.dto.PaymentError.{NoSuchAccount, SameAccountTransfer}
 import com.galekseev.payments.dto.Transfer.Status.Completed
 import com.galekseev.payments.dto.Transfer.Status.Declined.InsufficientFunds
 import com.galekseev.payments.dto._
@@ -18,7 +19,8 @@ import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 import eu.timepit.refined.auto._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.{Assertion, Matchers, WordSpec}
+import play.api.libs.json.Json.{obj, toJsObject}
 import play.api.libs.json._
 
 import scala.util.control.NonFatal
@@ -34,6 +36,11 @@ class EndToEndSpec
 
   lazy implicit private val accountLockService: LockService[AccountId] = new LockService[AccountId]
   lazy implicit private val transferLockService: LockService[TransferId] = new LockService[TransferId]
+  lazy implicit private val discreteExceptionHandler: ExceptionHandler = ExceptionHandler {
+    case NonFatal(e) =>
+      logger.error(s"Failure", e)
+      complete(StatusCodes.InternalServerError)
+  }
   lazy private val accountDao = new Dao[Account, AccountId]
   lazy private val transferDao = new Dao[Transfer, TransferId]
   lazy private val accountIdGenerator = new AccountIdGenerator
@@ -42,260 +49,190 @@ class EndToEndSpec
   lazy private val transferService = new SynchronizedTransferService(transferDao, accountDao, transferIdGenerator)
   lazy private val accountRoutes = new AccountRoutes(accountService).routes
   lazy private val transferRoutes = new TransferRoutes(transferService).routes
-
-  implicit val discreteExceptionHandler: ExceptionHandler =
-    ExceptionHandler {
-      case NonFatal(e) =>
-        logger.error(s"Failure", e)
-        complete(StatusCodes.InternalServerError)
-    }
-  lazy val routes: Route = Route.seal(
+  lazy private val routes: Route = Route.seal(
     DebuggingDirectives.logRequestResult(("REST", Logging.DebugLevel))(
       accountRoutes ~ transferRoutes
     )
   )
+  private val accountsUri = "/accounts"
+  private val transfersUri = "/transfers"
+  private var account_1: Account = _
+  private var account_2: Account = _
+  private var account_3: Account = _
+  private var insufficientFundsTransfer: Transfer = _
+  private var zeroTransfer: Transfer = _
+  private var completedTransfer: Transfer = _
 
   "MoneyTransferRoutes" should {
+    "create accounts and transfer money between them" in {
 
-    "create 2 accounts and transfer money between them" in {
+      // the order is important because these tests depend on the mutable state
+      testAccountCreation
+      testNegativeAmountTransfer
+      testNonexistentSenderTransfer
+      testNonexistentReceiverTransfer
+      testNonexistentSenderAndReceiverTransfer
+      testSameAccountTransfer
+      testInsufficientFundsTransfer
+      testZeroTransfer
+      testProperTransfer
 
-      val accountRequest_1 = AccountRequest(Amount(BigInt(10L)))
-      val accountRequest_2 = AccountRequest(Amount(BigInt(20L)))
-      val accountRequest_3 = AccountRequest(Amount(BigInt(30L)))
-      var account_1 = Account(AccountId(-1L), accountRequest_1.amount)
-      var account_2 = Account(AccountId(-1L), accountRequest_2.amount)
-      var account_3 = Account(AccountId(-1L), accountRequest_3.amount)
-      val transferAmount = Amount(BigInt(4L))
-      var insufficientFundsTransferId = TransferId(-1L)
-      var transferId = TransferId(-1L)
+      lazy val accountRequest = AccountRequest(Amount(BigInt(10L)))
+      lazy val negativeAmountAccountRequest =
+        toJsObject(accountRequest) ++ obj("amount" -> obj("cents" -> Json.toJson(-10L)))
+      lazy val transferAmount = Amount(BigInt(4L))
+      lazy val negativeTransferRequest =
+        toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++
+          obj("amount" -> obj("cents" -> Json.toJson(-4L)))
+      lazy val nonExistentAccountId = AccountId(Long.MaxValue)
 
-      Get(uri = "/accounts") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Account]] shouldBe empty
+      def checkAccounts(expected: Seq[Account]): Assertion =
+        checkSeq(expected, accountsUri)
+
+      def checkTransfers(expected: Seq[Transfer]): Assertion =
+        checkSeq(expected, transfersUri)
+
+      def checkSeq[A](expected: Seq[A], uri: String)(implicit ev: FromEntityUnmarshaller[Seq[A]]): Assertion =
+        Get(uri = uri) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          entityAs[Seq[A]] shouldBe expected
+        }
+
+      def testNonexistentAccountTransfer(request: TransferRequest): Assertion = {
+        Post(transfersUri).withEntity(Marshal(request).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.BadRequest)
+          entityAs[PaymentError] should === (NoSuchAccount(nonExistentAccountId))
+        }
+
+        checkAccounts(Seq(account_1, account_2, account_3))
+        checkTransfers(Seq.empty)
       }
 
-      Get(uri = "/transfers") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] shouldBe empty
+      lazy val testAccountCreation: Assertion = {
+        checkAccounts(Seq.empty)
+        checkTransfers(Seq.empty)
+
+        Post(accountsUri).withEntity(Marshal(accountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          account_1 = entityAs[Account]
+          account_1.amount should ===(accountRequest.amount)
+        }
+
+        Post(accountsUri).withEntity(Marshal(accountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          account_2 = entityAs[Account]
+          account_2.amount should ===(accountRequest.amount)
+        }
+
+        Post(accountsUri).withEntity(Marshal(accountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          account_3 = entityAs[Account]
+          account_3.amount should ===(accountRequest.amount)
+        }
+
+        Post(accountsUri).withEntity(Marshal(negativeAmountAccountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.BadRequest)
+        }
+
+        checkAccounts(Seq(account_1, account_2, account_3))
       }
 
-      Get(uri = "/accounts/1") ~> routes ~> check {
-        status should ===(StatusCodes.NotFound)
+      lazy val testNegativeAmountTransfer: Assertion = {
+        Post(transfersUri).withEntity(Marshal(negativeTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should === (StatusCodes.BadRequest)
+        }
+
+        checkAccounts(Seq(account_1, account_2, account_3))
+        checkTransfers(Seq.empty)
       }
 
-      Get(uri = "/accounts/2") ~> routes ~> check {
-        status should ===(StatusCodes.NotFound)
+      lazy val testNonexistentSenderTransfer: Assertion =
+        testNonexistentAccountTransfer(TransferRequest(nonExistentAccountId, account_2.id, transferAmount))
+
+      lazy val testNonexistentReceiverTransfer: Assertion =
+        testNonexistentAccountTransfer(TransferRequest(account_1.id, nonExistentAccountId, transferAmount))
+
+      lazy val testNonexistentSenderAndReceiverTransfer: Assertion = {
+        val request = TransferRequest(nonExistentAccountId, nonExistentAccountId, transferAmount)
+        Post(transfersUri).withEntity(Marshal(request).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.BadRequest)
+          entityAs[PaymentError] should === (SameAccountTransfer)
+        }
+
+        checkAccounts(Seq(account_1, account_2, account_3))
+        checkTransfers(Seq.empty)
       }
 
-      Post("/accounts").withEntity(Marshal(accountRequest_1).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        val account = entityAs[Account]
-        account.amount should ===(account_1.amount)
-        account_1 = account
+      lazy val testSameAccountTransfer: Assertion = {
+        val request = TransferRequest(account_1.id, account_1.id, transferAmount)
+        Post(transfersUri).withEntity(Marshal(request).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.BadRequest)
+          entityAs[PaymentError] should === (SameAccountTransfer)
+        }
+
+        checkAccounts(Seq(account_1, account_2, account_3))
+        checkTransfers(Seq.empty)
       }
 
-      Post("/accounts").withEntity(Marshal(accountRequest_2).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        val account = entityAs[Account]
-        account.amount should ===(account_2.amount)
-        account_2 = account
+      lazy val testInsufficientFundsTransfer: Assertion = {
+        val insufficientFundsTransferRequest = TransferRequest(account_1.id, account_3.id, Amount(BigInt(Long.MaxValue)))
+        Post(transfersUri).withEntity(Marshal(insufficientFundsTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should === (StatusCodes.OK)
+          insufficientFundsTransfer = entityAs[Transfer]
+          insufficientFundsTransfer.from should === (insufficientFundsTransferRequest.from)
+          insufficientFundsTransfer.to should === (insufficientFundsTransferRequest.to)
+          insufficientFundsTransfer.amount should === (insufficientFundsTransferRequest.amount)
+          insufficientFundsTransfer.status should === (InsufficientFunds)
+        }
+
+        checkAccounts(Seq(account_1, account_2, account_3))
+        checkTransfers(Seq(insufficientFundsTransfer))
       }
 
-      Post("/accounts").withEntity(Marshal(accountRequest_3).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        val account = entityAs[Account]
-        account.amount should ===(account_3.amount)
-        account_3 = account
-      }
+      lazy val testZeroTransfer: Assertion = {
+        val transferRequest = TransferRequest(account_1.id, account_2.id, Amount(BigInt(0L)))
+        Post(transfersUri).withEntity(Marshal(transferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          zeroTransfer = entityAs[Transfer]
+          zeroTransfer.from should ===(transferRequest.from)
+          zeroTransfer.to should ===(transferRequest.to)
+          zeroTransfer.amount should ===(transferRequest.amount)
+          zeroTransfer.status should ===(Completed)
+        }
 
-      Get(uri = "/accounts") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Account]] should ===(Seq(account_1, account_2, account_3))
-      }
+        checkAccounts(Seq(
+          account_1,
+          account_2,
+          account_3
+        ))
 
-      Get(uri = s"/accounts/${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_1)
-      }
-
-      Get(uri = s"/accounts/${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_2)
-      }
-
-      Get(uri = s"/accounts/${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_3)
-      }
-
-      val negativeTransferRequest: JsObject = Json.toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++
-        Json.obj("amount" -> Json.obj("cents" -> Json.toJson(-4L)))
-      Post("/transfers").withEntity(Marshal(negativeTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
-      }
-
-      Get(uri = s"/accounts/${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_1)
-      }
-
-      Get(uri = s"/accounts/${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_2)
-      }
-
-      Get(uri = s"/accounts/${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_3)
-      }
-
-      Get(uri = "/transfers") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] shouldBe empty
-      }
-
-      val nonExistentAccountId = AccountId(4L)
-      val nonExistentSenderTransferRequest = TransferRequest(nonExistentAccountId, account_2.id, transferAmount)
-      Post("/transfers").withEntity(Marshal(nonExistentSenderTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
-        val error = entityAs[PaymentError]
-        error should === (NoSuchAccount(nonExistentAccountId))
-      }
-
-      Get(uri = s"/accounts/${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_1)
-      }
-
-      Get(uri = s"/accounts/${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_2)
-      }
-
-      Get(uri = s"/accounts/${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_3)
-      }
-
-      Get(uri = "/transfers") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] shouldBe empty
-      }
-
-      val nonExistentReceiverTransferRequest = TransferRequest(account_1.id, nonExistentAccountId, transferAmount)
-      Post("/transfers").withEntity(Marshal(nonExistentReceiverTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.BadRequest)
-        val error = entityAs[PaymentError]
-        error should === (NoSuchAccount(nonExistentAccountId))
-      }
-
-      Get(uri = s"/accounts/${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_1)
-      }
-
-      Get(uri = s"/accounts/${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_2)
-      }
-
-      Get(uri = s"/accounts/${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_3)
-      }
-
-      Get(uri = "/transfers") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] shouldBe empty
-      }
-
-      val insufficientFundsTransferRequest = TransferRequest(account_1.id, account_3.id, Amount(BigInt(Long.MaxValue)))
-      Post("/transfers").withEntity(Marshal(insufficientFundsTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        val transfer = entityAs[Transfer]
-        insufficientFundsTransferId = transfer.id
-        transfer should ===(Transfer.fromRequest(insufficientFundsTransferRequest, insufficientFundsTransferId, InsufficientFunds))
-      }
-
-      Get(uri = s"/accounts/${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_1)
-      }
-
-      Get(uri = s"/accounts/${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_2)
-      }
-
-      Get(uri = s"/accounts/${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_3)
-      }
-
-      Get(uri = "/transfers") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] shouldBe Seq(Transfer.fromRequest(insufficientFundsTransferRequest, insufficientFundsTransferId, InsufficientFunds))
-      }
-
-      val transferRequest = TransferRequest(account_1.id, account_2.id, transferAmount)
-      Post("/transfers").withEntity(Marshal(transferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        val transfer: Transfer = entityAs[Transfer]
-        transferId = transfer.id
-        transfer should ===(Transfer.fromRequest(transferRequest, transferId, Completed))
-      }
-
-      val account_1_updated = account_1.copy(amount = (account_1.amount - transferAmount).get)
-      Get(uri = s"/accounts/${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_1_updated)
-      }
-
-      val account_2_updated = account_2.copy(amount = account_2.amount + transferAmount)
-      Get(uri = s"/accounts/${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_2_updated)
-      }
-
-      Get(uri = s"/accounts/${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Account] should ===(account_3)
-      }
-
-      Get(uri = "/accounts") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Account]] should ===(Seq(
-          account_1_updated, account_2_updated, account_3
+        checkTransfers(Seq(
+          insufficientFundsTransfer,
+          zeroTransfer
         ))
       }
 
-      Get(uri = "/transfers") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] should ===(Seq(
-          Transfer.fromRequest(insufficientFundsTransferRequest, insufficientFundsTransferId, InsufficientFunds),
-          Transfer.fromRequest(transferRequest, transferId, Completed)
-        ))
-      }
+      lazy val testProperTransfer: Assertion = {
+        val transferRequest = TransferRequest(account_1.id, account_2.id, transferAmount)
+        Post(transfersUri).withEntity(Marshal(transferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          completedTransfer = entityAs[Transfer]
+          completedTransfer.from should ===(transferRequest.from)
+          completedTransfer.to should ===(transferRequest.to)
+          completedTransfer.amount should ===(transferRequest.amount)
+          completedTransfer.status should ===(Completed)
+        }
 
-      Get(uri = s"/transfers?accId=${account_1.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] should ===(Seq(
-          Transfer.fromRequest(insufficientFundsTransferRequest, insufficientFundsTransferId, InsufficientFunds),
-          Transfer.fromRequest(transferRequest, transferId, Completed)
+        checkAccounts(Seq(
+          account_1.copy(amount = (account_1.amount - transferAmount).get),
+          account_2.copy(amount = account_2.amount + transferAmount),
+          account_3
         ))
-      }
 
-      Get(uri = s"/transfers?accId=${account_2.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] should ===(Seq(
-          Transfer.fromRequest(transferRequest, transferId, Completed)
-        ))
-      }
-
-      Get(uri = s"/transfers?accId=${account_3.id.id}") ~> routes ~> check {
-        status should ===(StatusCodes.OK)
-        entityAs[Seq[Transfer]] should ===(Seq(
-          Transfer.fromRequest(insufficientFundsTransferRequest, insufficientFundsTransferId, InsufficientFunds)
+        checkTransfers(Seq(
+          insufficientFundsTransfer,
+          zeroTransfer,
+          completedTransfer
         ))
       }
 

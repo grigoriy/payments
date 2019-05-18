@@ -27,3 +27,5 @@ project/plugins/project/
 *.jar
 
 /checklist.md
+
+.hydra/

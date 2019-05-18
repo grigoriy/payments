@@ -1,8 +1,8 @@
 package com.galekseev.payments.core.synched
 
 import com.galekseev.payments.core.TransferService
-import com.galekseev.payments.dto.PaymentError.{ InsufficientFunds, NoSuchAccount, NoSuchTransfer, SameAccountTransfer }
-import com.galekseev.payments.dto.Transfer.Status.{ Completed, Declined }
+import com.galekseev.payments.dto.PaymentError.{InsufficientFunds, NoSuchAccount, SameAccountTransfer}
+import com.galekseev.payments.dto.Transfer.Status.{Completed, Declined}
 import com.galekseev.payments.dto._
 import com.galekseev.payments.storage.synched.Dao
 import com.typesafe.scalalogging.StrictLogging
@@ -72,15 +72,5 @@ class SynchronizedTransferService(
   override def get: Traversable[Transfer] =
     transferLockService.callWithAllReadLocks(() =>
       transferDao.get
-    )
-
-  override def getByAccount(accountId: AccountId): Traversable[Transfer] =
-    get.filter(transfer =>
-      Set(transfer.from, transfer.to).contains(accountId)
-    )
-
-  override def get(id: TransferId): Either[NoSuchTransfer, Transfer] =
-    transferLockService.callWithReadLocks(Seq(id), () =>
-      transferDao.get(id).toRight(NoSuchTransfer(id))
     )
 }
