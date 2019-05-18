@@ -7,16 +7,16 @@ implementation) for money transfers between accounts.
 
 ### Compile, run tests and build an executable JAR:
 ```
-sbt coverage test coverageReport coverageOff scalafmtAll scalastyle test:scalastyle assembly
+sbt test it:test assembly
 ```
 
 ### Run
 ```
-sbt run
+$<project_dir> sbt run
 ```
 or
 ```
-java -jar <projectDir>target/scala-2.12/scala-cli-project-template-assembly-0.1.jar
+$<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
 ```
 
 ### Notes
@@ -24,5 +24,13 @@ java -jar <projectDir>target/scala-2.12/scala-cli-project-template-assembly-0.1.
 * may be invoked by multiple systems and services on behalf of end users
 * avoids using heavy frameworks
 * data store runs in memory
-* executable needs only Java or SBT to run
+* needs only Java or SBT to run
 * functionality is covered with tests
+* no unit tests but end-to-end coverage is over 90% (e2e tests were cheaper in development in this case)
+
+### Assumptions
+* all money is in the same currency
+* each request comes exactly once (hence no duplicate requests handling)
+* no deposits, withdrawals, account details, transfer details are needed
+* the data must be available only while the app is running
+* strict REST is not required
