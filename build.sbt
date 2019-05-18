@@ -42,7 +42,7 @@ lazy val root = (project in file("."))
       "org.scalacheck"              %% "scalacheck"           % "1.14.0"        % "test,it"
     ),
 
-    coverageMinimum := 92,
+    coverageMinimum := 93,
     coverageFailOnMinimum := true,
     coverageExcludedPackages := "com\\.galekseev\\.payments\\.Main",
 

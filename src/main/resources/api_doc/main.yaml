@@ -8,18 +8,12 @@ info:
   version: 1.0.0
 
 servers:
-  - url: 'https://{host}:{port}'
-    variables:
-      host:
-        default: localhost
-      port:
-        default: 443
   - url: 'http://{host}:{port}'
     variables:
       host:
         default: localhost
       port:
-        default: 80
+        default: 8080
 
 paths:
 
@@ -69,7 +63,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransferId'
+                $ref: '#/components/schemas/Transfer'
 
     get:
       summary: Get all transfers
@@ -114,35 +108,33 @@ components:
 
     TransferRequest:
       properties:
-        sender:
+        from:
           $ref: '#/components/schemas/AccountId'
-        receiver:
+        to:
           $ref: '#/components/schemas/AccountId'
         amount:
           $ref: '#/components/schemas/AmountInCents'
       required:
-        - sender
-        - receiver
+        - from
+        - to
         - amount
 
     Transfer:
       properties:
         id:
           $ref: '#/components/schemas/TransferId'
-        sender:
+        from:
           $ref: '#/components/schemas/AccountId'
-        receiver:
+        to:
           $ref: '#/components/schemas/AccountId'
         amount:
           $ref: '#/components/schemas/AmountInCents'
         status:
           $ref: '#/components/schemas/TransferStatus'
-        reasonOfDecline:
-          type: string
       required:
         - id
-        - sender
-        - receiver
+        - from
+        - to
         - amount
         - status
 

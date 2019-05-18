@@ -15,7 +15,7 @@ class SynchronizedAccountService(dao: Dao[Account, AccountId], idGenerator: Acco
     val id = idGenerator.generate()
     callWithWriteLocks(Seq(id), () =>
       dao
-        .add(Account(id, request.amount))
+        .add(Account(id, request.balance))
         .toRight(AccountExists(id))
     )
   }

@@ -38,10 +38,10 @@ class SynchronizedTransferService(
             (for {
               from <- maybeFrom.toRight(NoSuchAccount(request.from))
               to <- maybeTo.toRight(NoSuchAccount(request.to))
-              newFromAmount <- (from.amount - request.amount).toRight(InsufficientFunds)
-              _ <- accountDao.update(from.copy(amount = newFromAmount))
+              newFromAmount <- (from.balance - request.amount).toRight(InsufficientFunds)
+              _ <- accountDao.update(from.copy(balance = newFromAmount))
                 .toRight(throw new RuntimeException("Should not happen"))
-              _ <- accountDao.update(to.copy(amount = to.amount + request.amount))
+              _ <- accountDao.update(to.copy(balance = to.balance + request.amount))
                 .toRight(throw new RuntimeException("Should not happen"))
             } yield {
               Transfer.fromRequest(request, id, Completed)

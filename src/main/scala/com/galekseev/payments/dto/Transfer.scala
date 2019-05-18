@@ -1,6 +1,7 @@
 package com.galekseev.payments.dto
 
 import com.galekseev.payments.dto.Transfer.Status
+import com.galekseev.payments.dto.Transfer.Status.Declined.InsufficientFunds
 import play.api.libs.json._
 
 case class Transfer(id: TransferId,
@@ -24,7 +25,16 @@ object Transfer {
       case object InsufficientFunds extends Declined
     }
 
-    implicit val format: Format[Status] = julienrf.json.derived.oformat()
+    implicit val format: Format[Status] = new Format[Status] {
+      private val CompletedString = Completed.toString
+      private val InsufficientFundsString = InsufficientFunds.toString
+      override def writes(o: Status): JsValue = JsString(o.toString)
+      override def reads(json: JsValue): JsResult[Status] =
+        json.validate[String].map {
+          case `CompletedString` => Completed
+          case `InsufficientFundsString` => InsufficientFunds
+        }
+    }
   }
 
   implicit val format: Format[Transfer] = julienrf.json.derived.oformat()

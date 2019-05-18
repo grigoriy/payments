@@ -1,7 +1,7 @@
 package com.galekseev.payments.dto
 
 import com.galekseev.payments.dto.Amount.NonNegativeBigInt
-import eu.timepit.refined.api.{ Refined, Validate }
+import eu.timepit.refined.api.{Refined, Validate}
 import eu.timepit.refined.numeric.NonNegative
 import eu.timepit.refined.refineV
 import play.api.libs.json._
@@ -22,7 +22,10 @@ case class Amount(cents: NonNegativeBigInt) {
 object Amount {
   type NonNegativeBigInt = BigInt Refined NonNegative
 
-  implicit val format: Format[Amount] = Json.format
+  implicit val format: Format[Amount] = new Format[Amount] {
+    override def reads(json: JsValue): JsResult[Amount] = json.validate[NonNegativeBigInt].map(Amount(_))
+    override def writes(o: Amount): JsValue = Json.toJson(o.cents)
+  }
 
   implicit def refinedReads[T, P](implicit reads: Reads[T], v: Validate[T, P]): Reads[T Refined P] =
     Reads[T Refined P] { json =>

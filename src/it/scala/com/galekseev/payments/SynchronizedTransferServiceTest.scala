@@ -35,7 +35,7 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         val accounts: Seq[Account] = (1 to numAccounts)
           .map(_ => accountService.create(AccountRequest(Amount(randomNonNegativeBigInt))))
           .filter(_.isRight).map(_.right.get)
-        val totalAmount = accounts.map(_.amount).reduce(_ + _)
+        val totalAmount = accounts.map(_.balance).reduce(_ + _)
 
         (1 to numTransferRequests).map(_ => transferService.makeTransfer(TransferRequest(
           accounts(Random.nextInt(accounts.size)).id,
@@ -44,7 +44,7 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         )))
 
         val updatedAccounts = accountService.get
-        assert(updatedAccounts.map(_.amount).reduce(_ + _) === totalAmount)
+        assert(updatedAccounts.map(_.balance).reduce(_ + _) === totalAmount)
       }
     }
 
@@ -64,7 +64,7 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         val accounts: Seq[Account] = (1 to numAccounts)
           .map(_ => accountService.create(AccountRequest(Amount(randomNonNegativeBigInt))))
           .filter(_.isRight).map(_.right.get)
-        val totalAmount = accounts.map(_.amount).reduce(_ + _)
+        val totalAmount = accounts.map(_.balance).reduce(_ + _)
         val executor = Executors.newCachedThreadPool()
         val latch = new CountDownLatch(1)
 
@@ -97,7 +97,7 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         executor.shutdown()
 
         val updatedAccounts = accountService.get
-        assert(updatedAccounts.map(_.amount).reduce(_ + _) === totalAmount)
+        assert(updatedAccounts.map(_.balance).reduce(_ + _) === totalAmount)
       }
     }
 

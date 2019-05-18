@@ -78,12 +78,10 @@ class EndToEndSpec
       testProperTransfer
 
       lazy val accountRequest = AccountRequest(Amount(BigInt(10L)))
-      lazy val negativeAmountAccountRequest =
-        toJsObject(accountRequest) ++ obj("amount" -> obj("cents" -> Json.toJson(-10L)))
+      lazy val negativeAmountAccountRequest = toJsObject(accountRequest) ++ obj("balance" -> Json.toJson(-10L))
       lazy val transferAmount = Amount(BigInt(4L))
       lazy val negativeTransferRequest =
-        toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++
-          obj("amount" -> obj("cents" -> Json.toJson(-4L)))
+        toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++ obj("amount" -> Json.toJson(-4L))
       lazy val nonExistentAccountId = AccountId(Long.MaxValue)
 
       def checkAccounts(expected: Seq[Account]): Assertion =
@@ -115,19 +113,19 @@ class EndToEndSpec
         Post(accountsUri).withEntity(Marshal(accountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.OK)
           account_1 = entityAs[Account]
-          account_1.amount should ===(accountRequest.amount)
+          account_1.balance should ===(accountRequest.balance)
         }
 
         Post(accountsUri).withEntity(Marshal(accountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.OK)
           account_2 = entityAs[Account]
-          account_2.amount should ===(accountRequest.amount)
+          account_2.balance should ===(accountRequest.balance)
         }
 
         Post(accountsUri).withEntity(Marshal(accountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.OK)
           account_3 = entityAs[Account]
-          account_3.amount should ===(accountRequest.amount)
+          account_3.balance should ===(accountRequest.balance)
         }
 
         Post(accountsUri).withEntity(Marshal(negativeAmountAccountRequest).to[MessageEntity].futureValue) ~> routes ~> check {
@@ -224,8 +222,8 @@ class EndToEndSpec
         }
 
         checkAccounts(Seq(
-          account_1.copy(amount = (account_1.amount - transferAmount).get),
-          account_2.copy(amount = account_2.amount + transferAmount),
+          account_1.copy(balance = (account_1.balance - transferAmount).get),
+          account_2.copy(balance = account_2.balance + transferAmount),
           account_3
         ))
 
