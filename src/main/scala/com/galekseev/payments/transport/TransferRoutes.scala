@@ -11,30 +11,28 @@ import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 class TransferRoutes(transferService: TransferService)
-    extends StrictLogging
+  extends StrictLogging
     with PlayJsonSupport
     with DiscreteExceptionHandling {
 
   lazy val routes: Route =
     path("transfers") {
-          concat(
+      concat(
 
-            post {
-              entity(as[TransferRequest]) {
-                transferReq => {
-                  transferService.makeTransfer(transferReq) match {
-                    case Right(transfer) =>
-                      logger.info(s"Processed the transfer [$transfer]")
-                      complete(transfer)
-                    case Left(error) =>
-                      logger.info(s"Invalid transfer request [$transferReq]: [$error]")
-                      complete((StatusCodes.BadRequest, error))
-                  }
-                }
-              }
+        post {
+          entity(as[TransferRequest]) { transferReq => {
+            transferService.makeTransfer(transferReq) match {
+              case Right(transfer) =>
+                logger.info(s"Processed the transfer [$transfer]")
+                complete(transfer)
+              case Left(error) =>
+                logger.info(s"Invalid transfer request [$transferReq]: [$error]")
+                complete((StatusCodes.BadRequest, error))
             }
-
-            , get { complete(transferService.get) }
-          )
+          }}
         }
+
+        , get { complete(transferService.get) }
+      )
+    }
 }

@@ -14,8 +14,7 @@ class SynchronizedAccountService(dao: Dao[Account, AccountId], idGenerator: Acco
   override def create(request: AccountRequest): Either[AccountExists, Account] = {
     val id = idGenerator.generate()
     callWithWriteLocks(Seq(id), () =>
-      dao
-        .add(Account(id, request.balance))
+      dao.add(Account(id, request.balance))
         .toRight(AccountExists(id))
     )
   }

@@ -21,16 +21,15 @@ class AccountRoutes(accountService: AccountService)
           concat(
 
             post {
-              entity(as[AccountRequest]) {
-                account =>
-                  accountService.create(account) match {
-                    case Right(acc) =>
-                      logger.info(s"Created account [$acc]")
-                      complete(acc)
-                    case Left(AccountExists(id)) =>
-                      logger.info(s"Could not create an account [$account] with id [$id]: conflicting IDs")
-                      complete((StatusCodes.InternalServerError, "Conflicting IDs"))
-                  }
+              entity(as[AccountRequest]) { account =>
+                accountService.create(account) match {
+                  case Right(acc) =>
+                    logger.info(s"Created account [$acc]")
+                    complete(acc)
+                  case Left(AccountExists(id)) =>
+                    logger.error(s"Could not create an account [$account] with id [$id]: conflicting IDs")
+                    complete((StatusCodes.InternalServerError, "Conflicting IDs"))
+                }
               }
             }
 

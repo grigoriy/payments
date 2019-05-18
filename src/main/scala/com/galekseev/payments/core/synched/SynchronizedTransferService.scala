@@ -20,7 +20,6 @@ class SynchronizedTransferService(
   @SuppressWarnings(
     Array(
       "org.wartremover.warts.Throw",
-      "org.wartremover.warts.OptionPartial",
       "org.wartremover.warts.Product",
       "org.wartremover.warts.Serializable"
     )
@@ -40,9 +39,9 @@ class SynchronizedTransferService(
               to <- maybeTo.toRight(NoSuchAccount(request.to))
               newFromAmount <- (from.balance - request.amount).toRight(InsufficientFunds)
               _ <- accountDao.update(from.copy(balance = newFromAmount))
-                .toRight(throw new RuntimeException("Should not happen"))
+                .toRight(throw new RuntimeException(s"The sender account [${from.id}] has disappeared (should not happen)"))
               _ <- accountDao.update(to.copy(balance = to.balance + request.amount))
-                .toRight(throw new RuntimeException("Should not happen"))
+                .toRight(throw new RuntimeException(s"The recipient account [${to.id}] has disappeared (should not happen)"))
             } yield {
               Transfer.fromRequest(request, id, Completed)
             }).left
@@ -51,20 +50,19 @@ class SynchronizedTransferService(
                   Right(Transfer.fromRequest(request, id, Declined.InsufficientFunds))
                 case e =>
                   Left(e)
-              }
-              .map(transferDao.add(_).get)
+              }.map(
+                transferDao.add(_).getOrElse(throw new RuntimeException("Failed to generate a unique transfer ID"))
+            )
           } catch {
             case NonFatal(e) =>
               logger.error(
-                s"Failed to transfer [${request.amount}] from [${request.from} to [${request.to}]. Rolling back ...",
-                e
+                s"Failed to transfer [${request.amount}] from [${request.from} to [${request.to}]. Rolling back ...", e
               )
               maybeFrom.foreach(accountDao.update)
               maybeTo.foreach(accountDao.update)
               throw e
           }
-            }
-          )
+        })
       )
     }
   }

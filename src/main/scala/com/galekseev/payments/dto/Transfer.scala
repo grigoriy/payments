@@ -37,7 +37,7 @@ object Transfer {
     }
   }
 
-  implicit val format: Format[Transfer] = julienrf.json.derived.oformat()
+  implicit val format: OFormat[Transfer] = Json.format
 }
 
 case class TransferId(id: Long) extends AnyVal
