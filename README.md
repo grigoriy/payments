@@ -28,9 +28,10 @@ $<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
 * functionality is covered with tests
 * no unit tests but end-to-end coverage is over 90% (e2e tests were cheaper in development in this case)
 
-### Assumptions
-* all money is in the same currency
-* each request comes exactly once (hence no duplicate requests handling)
-* no deposits, withdrawals, account details, transfer details are needed
+### Assumptions (most are limiting but relatively easy to compensate in a production-ready app)
+* authorisation, HTTPS, are non-goals
+* each request is sent and received exactly once (hence no duplicate requests handling needed)
 * the data must be available only while the app is running
+* all money is in the same currency
+* no deposits, withdrawals, account details, transfer details are needed
 * strict REST is not required
