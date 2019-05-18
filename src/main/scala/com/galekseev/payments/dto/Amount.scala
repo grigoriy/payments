@@ -6,7 +6,7 @@ import eu.timepit.refined.numeric.NonNegative
 import eu.timepit.refined.refineV
 import play.api.libs.json._
 
-case class Amount(cents: NonNegativeBigInt) {
+final case class Amount(cents: NonNegativeBigInt) {
   // scalastyle:off
 
   @SuppressWarnings(Array("org.wartremover.warts.EitherProjectionPartial"))

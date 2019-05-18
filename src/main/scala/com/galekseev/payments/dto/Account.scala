@@ -2,12 +2,12 @@ package com.galekseev.payments.dto
 
 import play.api.libs.json._
 
-case class Account(id: AccountId, balance: Amount) extends HasId[AccountId]
+final case class Account(id: AccountId, balance: Amount) extends HasId[AccountId]
 object Account {
   implicit val format: Format[Account] = Json.format
 }
 
-case class AccountId(id: Long) extends AnyVal
+final case class AccountId(id: Long) extends AnyVal
 object AccountId {
   implicit val format: Format[AccountId] = new Format[AccountId] {
     override def reads(json: JsValue): JsResult[AccountId] = json.validate[Long].map(AccountId(_))
@@ -17,7 +17,7 @@ object AccountId {
   implicit val ordering: Ordering[AccountId] = Ordering.by(_.id)
 }
 
-case class AccountRequest(balance: Amount)
+final case class AccountRequest(balance: Amount)
 object AccountRequest {
   implicit val format: OFormat[AccountRequest] = Json.format
 }

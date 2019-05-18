@@ -1,20 +1,13 @@
 package com.galekseev.payments
 
-import akka.event.Logging
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.directives.DebuggingDirectives
-import akka.http.scaladsl.server.{ExceptionHandler, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import com.galekseev.payments.core.synched._
 import com.galekseev.payments.dto.PaymentError.{NoSuchAccount, SameAccountTransfer}
 import com.galekseev.payments.dto.Transfer.Status.Completed
 import com.galekseev.payments.dto.Transfer.Status.Declined.InsufficientFunds
 import com.galekseev.payments.dto._
-import com.galekseev.payments.storage.synched.Dao
-import com.galekseev.payments.transport.{AccountRoutes, TransferRoutes}
 import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 import eu.timepit.refined.auto._
@@ -22,8 +15,6 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{Assertion, Matchers, WordSpec}
 import play.api.libs.json.Json.{obj, toJsObject}
 import play.api.libs.json._
-
-import scala.util.control.NonFatal
 
 // scalastyle:off magic.number
 class EndToEndSpec
@@ -34,26 +25,7 @@ class EndToEndSpec
     with PlayJsonSupport
     with StrictLogging {
 
-  lazy implicit private val accountLockService: LockService[AccountId] = new LockService[AccountId]
-  lazy implicit private val transferLockService: LockService[TransferId] = new LockService[TransferId]
-  lazy implicit private val discreteExceptionHandler: ExceptionHandler = ExceptionHandler {
-    case NonFatal(e) =>
-      logger.error(s"Failure", e)
-      complete(StatusCodes.InternalServerError)
-  }
-  lazy private val accountDao = new Dao[Account, AccountId]
-  lazy private val transferDao = new Dao[Transfer, TransferId]
-  lazy private val accountIdGenerator = new AccountIdGenerator
-  lazy private val transferIdGenerator = new TransferIdGenerator
-  lazy private val accountService = new SynchronizedAccountService(accountDao, accountIdGenerator)
-  lazy private val transferService = new SynchronizedTransferService(transferDao, accountDao, transferIdGenerator)
-  lazy private val accountRoutes = new AccountRoutes(accountService).routes
-  lazy private val transferRoutes = new TransferRoutes(transferService).routes
-  lazy private val routes: Route = Route.seal(
-    DebuggingDirectives.logRequestResult(("REST", Logging.DebugLevel))(
-      accountRoutes ~ transferRoutes
-    )
-  )
+  private val routes = new TestConfig().routes
   private val accountsUri = "/accounts"
   private val transfersUri = "/transfers"
   private var account_1: Account = _

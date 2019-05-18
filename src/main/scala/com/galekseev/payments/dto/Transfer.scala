@@ -19,7 +19,7 @@ object Transfer {
 
   sealed trait Status
   object Status {
-    case object Completed extends Status
+    final case object Completed extends Status
     sealed trait Declined extends Status
     object Declined {
       case object InsufficientFunds extends Declined
@@ -40,7 +40,7 @@ object Transfer {
   implicit val format: OFormat[Transfer] = Json.format
 }
 
-case class TransferId(id: Long) extends AnyVal
+final case class TransferId(id: Long) extends AnyVal
 object TransferId {
   implicit val format: Format[TransferId] = new Format[TransferId] {
     override def reads(json: JsValue): JsResult[TransferId] =
@@ -51,7 +51,7 @@ object TransferId {
   implicit val ordering: Ordering[TransferId] = Ordering.by(_.id)
 }
 
-case class TransferRequest(from: AccountId, to: AccountId, amount: Amount)
+final case class TransferRequest(from: AccountId, to: AccountId, amount: Amount)
 object TransferRequest {
   implicit val format: OFormat[TransferRequest] = Json.format[TransferRequest]
 }

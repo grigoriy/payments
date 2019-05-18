@@ -13,8 +13,7 @@ import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 class AccountRoutes(accountService: AccountService)
     extends StrictLogging
-    with PlayJsonSupport
-    with DiscreteExceptionHandling {
+    with PlayJsonSupport {
 
   lazy val routes: Route =
     path("accounts") {

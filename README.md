@@ -20,7 +20,7 @@ $<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
 ```
 
 ### Notes
-* API is described in an OpenAPI spec
+* the API is described in an OpenAPI spec (src/main/resources/api_doc/main.yaml)
 * may be invoked by multiple systems and services on behalf of end users
 * avoids using heavy frameworks
 * data store runs in memory

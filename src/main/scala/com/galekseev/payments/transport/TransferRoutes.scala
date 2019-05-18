@@ -12,8 +12,7 @@ import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 class TransferRoutes(transferService: TransferService)
   extends StrictLogging
-    with PlayJsonSupport
-    with DiscreteExceptionHandling {
+    with PlayJsonSupport {
 
   lazy val routes: Route =
     path("transfers") {
