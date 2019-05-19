@@ -100,7 +100,8 @@ components:
         - balance
 
     AccountId:
-      type: integer
+      type: string
+      format: uuid
 
     AmountInCents:
       type: integer
@@ -143,7 +144,8 @@ components:
         - processingTimestamp
 
     TransferId:
-      type: integer
+      type: string
+      format: uuid
 
     TransferStatus:
       type: string

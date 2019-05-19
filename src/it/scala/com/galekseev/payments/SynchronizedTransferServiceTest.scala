@@ -1,5 +1,6 @@
 package com.galekseev.payments
 
+import java.util.UUID
 import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
 
 import com.galekseev.payments.dto.Amount.NonNegativeBigInt
@@ -73,10 +74,15 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         executor.submit(new Runnable { override def run(): Unit = {
           latch.await()
           val randomFromHundred = Random.nextInt(100)
+          val nonexistentAccountId = AccountId(UUID.randomUUID())
           if (randomFromHundred > 98)
-            transferService.makeTransfer(transferRequest.copy(from = AccountId(-1)))
+            transferService.makeTransfer(transferRequest.copy(
+              from = nonexistentAccountId
+            ))
           else if (randomFromHundred > 96)
-            transferService.makeTransfer(transferRequest.copy(to = AccountId(-1)))
+            transferService.makeTransfer(transferRequest.copy(
+              to = nonexistentAccountId
+            ))
           else if (randomFromHundred > 94)
             accountService.create(AccountRequest(
               Amount(BigInt(0L))

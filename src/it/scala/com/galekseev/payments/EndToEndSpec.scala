@@ -1,9 +1,10 @@
 package com.galekseev.payments
 
+import java.util.UUID
+
 import akka.http.scaladsl.marshalling.Marshal
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import com.galekseev.payments.dto.PaymentError.{NoSuchAccount, SameAccountTransfer}
 import com.galekseev.payments.dto.Transfer.Status.Completed
 import com.galekseev.payments.dto.Transfer.Status.Declined.InsufficientFunds
@@ -54,18 +55,18 @@ class EndToEndSpec
       lazy val transferAmount = Amount(BigInt(4L))
       lazy val negativeTransferRequest =
         toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++ obj("amount" -> Json.toJson(-4L))
-      lazy val nonExistentAccountId = AccountId(Long.MaxValue)
+      lazy val nonExistentAccountId = AccountId(UUID.randomUUID())
 
       def checkAccounts(expected: Seq[Account]): Assertion =
-        checkSeq(expected, accountsUri)
+        Get(uri = accountsUri) ~> routes ~> check {
+          status should ===(StatusCodes.OK)
+          entityAs[Seq[Account]].toSet shouldBe expected.toSet
+        }
 
       def checkTransfers(expected: Seq[Transfer]): Assertion =
-        checkSeq(expected, transfersUri)
-
-      def checkSeq[A](expected: Seq[A], uri: String)(implicit ev: FromEntityUnmarshaller[Seq[A]]): Assertion =
-        Get(uri = uri) ~> routes ~> check {
+        Get(uri = transfersUri) ~> routes ~> check {
           status should ===(StatusCodes.OK)
-          entityAs[Seq[A]] shouldBe expected
+          entityAs[Seq[Transfer]] shouldBe expected
         }
 
       def testNonexistentAccountTransfer(request: TransferRequest): Assertion = {

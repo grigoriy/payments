@@ -1,6 +1,7 @@
 package com.galekseev.payments.dto
 
 import java.time.OffsetDateTime
+import java.util.UUID
 
 import com.galekseev.payments.dto.Transfer.Status
 import com.galekseev.payments.dto.Transfer.Status.Declined.InsufficientFunds
@@ -43,11 +44,10 @@ object Transfer {
   implicit val format: OFormat[Transfer] = Json.format
 }
 
-final case class TransferId(id: Long) extends AnyVal
+final case class TransferId(id: UUID) extends AnyVal
 object TransferId {
   implicit val format: Format[TransferId] = new Format[TransferId] {
-    override def reads(json: JsValue): JsResult[TransferId] =
-      json.validate[Long].map(TransferId(_))
+    override def reads(json: JsValue): JsResult[TransferId] = json.validate[UUID].map(TransferId(_))
     override def writes(o: TransferId): JsValue = Json.toJson(o.id)
   }
 
