@@ -32,6 +32,7 @@ $<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
 * authorisation, HTTPS, are non-goals
 * each request is sent and received exactly once (hence no duplicate requests handling needed)
 * the data must be available only while the app is running
+* transfers are internal and should be instant, synchronous
 * all money is in the same currency
 * no deposits, withdrawals, account details, transfer details are needed
 * strict REST is not required
