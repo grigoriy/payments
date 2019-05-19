@@ -15,10 +15,6 @@ sbt test it:test assembly
 
 ### Run
 ```
-$<project_dir> sbt run
-```
-or
-```
 $<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
 ```
 
