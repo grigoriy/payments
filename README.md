@@ -10,12 +10,12 @@ implementation) for money transfers between accounts.
 
 ### Compile, run tests and build an executable JAR:
 ```
-sbt test it:test assembly
+<project_dir>$ sbt test it:test assembly
 ```
 
 ### Run
 ```
-$<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
+<project_dir>$ java -jar target/scala-2.12/payments-assembly-0.1.jar
 ```
 
 ### Notes
