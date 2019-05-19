@@ -10,7 +10,6 @@ object PaymentError {
   final case class AccountExists(accountId: AccountId) extends AccountCreationError
   final case object SameAccountTransfer extends TransferError
   final case class NoSuchAccount(accountId: AccountId) extends TransferError
-  final case object InsufficientFunds extends TransferError
 
   implicit val format: Format[PaymentError] = julienrf.json.derived.flat.oformat((__ \ "type").format[String])
 }
