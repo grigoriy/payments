@@ -11,15 +11,11 @@ case class Transfer(id: TransferId,
                     from: AccountId,
                     to: AccountId,
                     amount: Amount,
+                    description: Option[String],
                     status: Status,
                     processingTimestamp: OffsetDateTime)
   extends HasId[TransferId]
 object Transfer {
-
-  def fromRequest(request: TransferRequest, id: TransferId, status: Status): Transfer = {
-    import request._
-    Transfer(id, from, to, amount, status, OffsetDateTime.now())
-  }
 
   sealed trait Status
   object Status {
@@ -54,7 +50,7 @@ object TransferId {
   implicit val ordering: Ordering[TransferId] = Ordering.by(_.id)
 }
 
-final case class TransferRequest(from: AccountId, to: AccountId, amount: Amount)
+final case class TransferRequest(from: AccountId, to: AccountId, amount: Amount, description: Option[String])
 object TransferRequest {
   implicit val format: OFormat[TransferRequest] = Json.format[TransferRequest]
 }

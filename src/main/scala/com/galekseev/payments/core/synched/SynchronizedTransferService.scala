@@ -26,7 +26,7 @@ class SynchronizedTransferService(transferDao: Dao[Transfer, TransferId],
         for {
           from      <- accountDao.get(fromId).toRight(NoSuchAccount(fromId))
           to        <- accountDao.get(toId).toRight(NoSuchAccount(toId))
-        } yield doTransfer(from, to, request.amount)
+        } yield doTransfer(from, to, request.amount, request.description)
       )
     } yield transfer
 
@@ -37,7 +37,7 @@ class SynchronizedTransferService(transferDao: Dao[Transfer, TransferId],
     accountLockService.callWithWriteLocks(Seq(from, to), f)
 
   @SuppressWarnings(Array("org.wartremover.warts.Product", "org.wartremover.warts.Serializable"))
-  private def doTransfer(from: Account, to: Account, amount: Amount): Transfer =
+  private def doTransfer(from: Account, to: Account, amount: Amount, description: Option[String]): Transfer =
     withRollback(() => {
 
       val status =
@@ -48,7 +48,7 @@ class SynchronizedTransferService(transferDao: Dao[Transfer, TransferId],
         }).getOrElse(
           Declined.InsufficientFunds
         )
-      saveTransfer(Transfer(idGenerator.generate(), from.id, to.id, amount, status, OffsetDateTime.now()))
+      saveTransfer(Transfer(idGenerator.generate(), from.id, to.id, amount, description, status, OffsetDateTime.now()))
 
     },
       from,

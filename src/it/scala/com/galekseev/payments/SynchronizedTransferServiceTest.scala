@@ -39,7 +39,8 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         transferService.makeTransfer(TransferRequest(
           accounts(Random.nextInt(accounts.size)).id,
           accounts(Random.nextInt(accounts.size)).id,
-          Amount(randomNonNegativeBigInt)
+          Amount(randomNonNegativeBigInt),
+          None
         ))
       )
 
@@ -68,7 +69,8 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
         TransferRequest(
           accounts(Random.nextInt(accounts.size)).id,
           accounts(Random.nextInt(accounts.size)).id,
-          Amount(randomNonNegativeBigInt)
+          Amount(randomNonNegativeBigInt),
+          None
         )
       ).map(transferRequest =>
         executor.submit(new Runnable { override def run(): Unit = {
@@ -124,7 +126,8 @@ class SynchronizedTransferServiceTest extends WordSpec with Matchers with ScalaF
           transferService.makeTransfer(TransferRequest(
             accounts(firstAccountIndex).id,
             accounts(secondAccountIndex).id,
-            Amount(randomNonNegativeBigInt)
+            Amount(randomNonNegativeBigInt),
+            None
           ))
         })
 

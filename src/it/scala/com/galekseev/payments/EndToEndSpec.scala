@@ -54,7 +54,8 @@ class EndToEndSpec
       lazy val negativeAmountAccountRequest = toJsObject(accountRequest) ++ obj("balance" -> Json.toJson(-10L))
       lazy val transferAmount = Amount(BigInt(4L))
       lazy val negativeTransferRequest =
-        toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount)) ++ obj("amount" -> Json.toJson(-4L))
+        toJsObject(TransferRequest(account_1.id, account_2.id, transferAmount, Some("Negative amount request"))) ++
+          obj("amount" -> Json.toJson(-4L))
       lazy val nonExistentAccountId = AccountId(UUID.randomUUID())
 
       def checkAccounts(expected: Seq[Account]): Assertion =
@@ -118,13 +119,13 @@ class EndToEndSpec
       }
 
       lazy val testNonexistentSenderTransfer: Assertion =
-        testNonexistentAccountTransfer(TransferRequest(nonExistentAccountId, account_2.id, transferAmount))
+        testNonexistentAccountTransfer(TransferRequest(nonExistentAccountId, account_2.id, transferAmount, Some("No sender")))
 
       lazy val testNonexistentReceiverTransfer: Assertion =
-        testNonexistentAccountTransfer(TransferRequest(account_1.id, nonExistentAccountId, transferAmount))
+        testNonexistentAccountTransfer(TransferRequest(account_1.id, nonExistentAccountId, transferAmount, Some("No receiver")))
 
       lazy val testNonexistentSenderAndReceiverTransfer: Assertion = {
-        val request = TransferRequest(nonExistentAccountId, nonExistentAccountId, transferAmount)
+        val request = TransferRequest(nonExistentAccountId, nonExistentAccountId, transferAmount, Some("No sender, no receiver"))
         Post(transfersUri).withEntity(Marshal(request).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.BadRequest)
           entityAs[PaymentError] should === (SameAccountTransfer)
@@ -135,7 +136,7 @@ class EndToEndSpec
       }
 
       lazy val testSameAccountTransfer: Assertion = {
-        val request = TransferRequest(account_1.id, account_1.id, transferAmount)
+        val request = TransferRequest(account_1.id, account_1.id, transferAmount, Some("Same account"))
         Post(transfersUri).withEntity(Marshal(request).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.BadRequest)
           entityAs[PaymentError] should === (SameAccountTransfer)
@@ -146,7 +147,7 @@ class EndToEndSpec
       }
 
       lazy val testInsufficientFundsTransfer: Assertion = {
-        val insufficientFundsTransferRequest = TransferRequest(account_1.id, account_3.id, Amount(BigInt(Long.MaxValue)))
+        val insufficientFundsTransferRequest = TransferRequest(account_1.id, account_3.id, Amount(BigInt(Long.MaxValue)), Some("Insufficient funds"))
         Post(transfersUri).withEntity(Marshal(insufficientFundsTransferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
           status should === (StatusCodes.OK)
           insufficientFundsTransfer = entityAs[Transfer]
@@ -161,7 +162,7 @@ class EndToEndSpec
       }
 
       lazy val testZeroTransfer: Assertion = {
-        val transferRequest = TransferRequest(account_1.id, account_2.id, Amount(BigInt(0L)))
+        val transferRequest = TransferRequest(account_1.id, account_2.id, Amount(BigInt(0L)), Some("Blank"))
         Post(transfersUri).withEntity(Marshal(transferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.OK)
           zeroTransfer = entityAs[Transfer]
@@ -184,7 +185,7 @@ class EndToEndSpec
       }
 
       lazy val testProperTransfer: Assertion = {
-        val transferRequest = TransferRequest(account_1.id, account_2.id, transferAmount)
+        val transferRequest = TransferRequest(account_1.id, account_2.id, transferAmount, Some("Proper"))
         Post(transfersUri).withEntity(Marshal(transferRequest).to[MessageEntity].futureValue) ~> routes ~> check {
           status should ===(StatusCodes.OK)
           completedTransfer = entityAs[Transfer]
