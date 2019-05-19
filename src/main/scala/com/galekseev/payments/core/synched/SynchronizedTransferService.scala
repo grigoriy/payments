@@ -1,7 +1,9 @@
 package com.galekseev.payments.core.synched
 
+import java.time.OffsetDateTime
+
 import com.galekseev.payments.core.TransferService
-import com.galekseev.payments.dto.PaymentError.{InsufficientFunds, NoSuchAccount, SameAccountTransfer}
+import com.galekseev.payments.dto.PaymentError.{NoSuchAccount, SameAccountTransfer}
 import com.galekseev.payments.dto.Transfer.Status.{Completed, Declined}
 import com.galekseev.payments.dto._
 import com.galekseev.payments.storage.synched.Dao
@@ -9,67 +11,74 @@ import com.typesafe.scalalogging.StrictLogging
 
 import scala.util.control.NonFatal
 
-class SynchronizedTransferService(
-  transferDao: Dao[Transfer, TransferId],
-  accountDao: Dao[Account, AccountId],
-  idGenerator: TransferIdGenerator
-)(implicit accountLockService: LockService[AccountId],
-  transferLockService: LockService[TransferId])
-    extends TransferService with StrictLogging {
+class SynchronizedTransferService(transferDao: Dao[Transfer, TransferId],
+                                  accountDao: Dao[Account, AccountId],
+                                  idGenerator: TransferIdGenerator
+                                 )(implicit accountLockService: LockService[AccountId])
+  extends TransferService with StrictLogging {
 
-  @SuppressWarnings(
-    Array(
-      "org.wartremover.warts.Throw",
-      "org.wartremover.warts.Product",
-      "org.wartremover.warts.Serializable"
-    )
-  )
-  override def makeTransfer(request: TransferRequest): Either[TransferError, Transfer] = {
-    if (request.from == request.to) {
-      Left(SameAccountTransfer)
-    } else {
-      val id = idGenerator.generate()
-      accountLockService.callWithWriteLocks(Seq(request.from, request.to), () =>
-        transferLockService.callWithWriteLocks(Seq(id), () => {
-          val maybeFrom = accountDao.get(request.from)
-          val maybeTo = accountDao.get(request.to)
-          try {
-            (for {
-              from <- maybeFrom.toRight(NoSuchAccount(request.from))
-              to <- maybeTo.toRight(NoSuchAccount(request.to))
-              newFromAmount <- (from.balance - request.amount).toRight(InsufficientFunds)
-              _ <- accountDao.update(from.copy(balance = newFromAmount))
-                .toRight(throw new RuntimeException(s"The sender account [${from.id}] has disappeared (should not happen)"))
-              _ <- accountDao.update(to.copy(balance = to.balance + request.amount))
-                .toRight(throw new RuntimeException(s"The recipient account [${to.id}] has disappeared (should not happen)"))
-            } yield {
-              Transfer.fromRequest(request, id, Completed)
-            }).left
-              .flatMap {
-                case PaymentError.InsufficientFunds =>
-                  Right(Transfer.fromRequest(request, id, Declined.InsufficientFunds))
-                case e =>
-                  Left(e)
-              }.map(
-                transferDao.add(_).getOrElse(throw new RuntimeException("Failed to generate a unique transfer ID"))
-            )
-          } catch {
-            case NonFatal(e) =>
-              logger.error(
-                s"Failed to transfer [${request.amount}] from [${request.from} to [${request.to}]. Rolling back ...", e
-              )
-              maybeFrom.foreach(accountDao.update)
-              maybeTo.foreach(accountDao.update)
-              throw e
-          }
-        })
+  override def makeTransfer(request: TransferRequest): Either[TransferError, Transfer] =
+    for {
+      _         <- validateRequest(request)
+      fromId    = request.from
+      toId      = request.to
+      transfer  <- locked(fromId, toId, () =>
+        for {
+          from      <- accountDao.get(fromId).toRight(NoSuchAccount(fromId))
+          to        <- accountDao.get(toId).toRight(NoSuchAccount(toId))
+        } yield doTransfer(from, to, request.amount)
       )
+    } yield transfer
+
+  private def validateRequest(request: TransferRequest): Either[SameAccountTransfer.type, TransferRequest] =
+    Either.cond(request.from != request.to, request, SameAccountTransfer)
+
+  private def locked[A](from: AccountId, to: AccountId, f: () => A): A =
+    accountLockService.callWithWriteLocks(Seq(from, to), f)
+
+  @SuppressWarnings(Array("org.wartremover.warts.Product", "org.wartremover.warts.Serializable"))
+  private def doTransfer(from: Account, to: Account, amount: Amount): Transfer =
+    withRollback(() => {
+
+      val status =
+        (from.balance - amount).map(newFromBalance => {
+          saveUpdated(from.copy(balance = newFromBalance))
+          saveUpdated(to.copy(balance = to.balance + amount))
+          Completed
+        }).getOrElse(
+          Declined.InsufficientFunds
+        )
+      saveTransfer(Transfer(idGenerator.generate(), from.id, to.id, amount, status, OffsetDateTime.now()))
+
+    },
+      from,
+      to,
+      amount
+    )
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  private def withRollback[A](f: () => A, from: Account, to: Account, amount: Amount): A =
+    try { f() } catch {
+      case NonFatal(e) =>
+        logger.error(s"Failed to transfer [$amount] from [${from.id}] to [${to.id}]. Rolling back ...", e)
+        Seq(from, to).foreach(account =>
+          accountDao.update(account).foreach(saved => logger.info(s"Rolled back $saved"))
+        )
+        throw e
     }
-  }
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  private def saveUpdated(account: Account): Unit =
+    accountDao.update(account).orElse(
+      throw new RuntimeException(s"Account [${account.id}] has disappeared while locked (must not happen)")
+    ).foreach(_ => ())
+
+  @SuppressWarnings(Array("org.wartremover.warts.Throw"))
+  private def saveTransfer(transfer: Transfer): Transfer =
+    transferDao.add(transfer)
+      .getOrElse(throw new RuntimeException("Failed to generate a unique transfer ID (must not happen"))
 
   override def get: Traversable[Transfer] =
-    transferLockService.callWithAllReadLocks(() =>
-      transferDao.get
-        .toSeq.sorted((x: Transfer, y: Transfer) => -x.processingTimestamp.compareTo(y.processingTimestamp))
-    )
+    transferDao.get
+      .toSeq.sorted((x: Transfer, y: Transfer) => -x.processingTimestamp.compareTo(y.processingTimestamp))
 }
