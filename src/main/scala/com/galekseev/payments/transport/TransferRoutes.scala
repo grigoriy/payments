@@ -16,22 +16,18 @@ class TransferRoutes(transferService: TransferService)
 
   lazy val routes: Route =
     path("transfers") {
-      concat(
-
-        post {
-          entity(as[TransferRequest]) { transferReq => {
-            transferService.makeTransfer(transferReq) match {
-              case Right(transfer) =>
-                logger.info(s"Processed the transfer [$transfer]")
-                complete(transfer)
-              case Left(error) =>
-                logger.info(s"Invalid transfer request [$transferReq]: [$error]")
-                complete((StatusCodes.BadRequest, error))
-            }
-          }}
-        }
-
-        , get { complete(transferService.get) }
-      )
+      post(entity(as[TransferRequest]) (transfer)) ~
+      get(complete(transferService.get))
     }
+
+  private def transfer(transferRequest: TransferRequest) = {
+    transferService.makeTransfer(transferRequest) match {
+      case Right(transfer) =>
+        logger.info(s"Processed the transfer [$transfer]")
+        complete(transfer)
+      case Left(error) =>
+        logger.info(s"Invalid transfer request [$transferRequest]: [$error]")
+        complete((StatusCodes.BadRequest, error))
+    }
+  }
 }

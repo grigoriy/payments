@@ -12,28 +12,23 @@ import com.typesafe.scalalogging.StrictLogging
 import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport
 
 class AccountRoutes(accountService: AccountService)
-    extends StrictLogging
+  extends StrictLogging
     with PlayJsonSupport {
 
   lazy val routes: Route =
     path("accounts") {
-          concat(
-
-            post {
-              entity(as[AccountRequest]) { account =>
-                accountService.create(account) match {
-                  case Right(acc) =>
-                    logger.info(s"Created account [$acc]")
-                    complete(acc)
-                  case Left(AccountExists(id)) =>
-                    logger.error(s"Could not create an account [$account] with id [$id]: conflicting IDs")
-                    complete((StatusCodes.InternalServerError, "Conflicting IDs"))
-                }
-              }
-            }
-
-            , get { complete(accountService.get) }
-          )
-
+      post(entity(as[AccountRequest]) (createAccount)) ~
+      get(complete(accountService.get))
     }
+
+  private def createAccount(account: AccountRequest) = {
+    accountService.create(account) match {
+      case Right(acc) =>
+        logger.info(s"Created account [$acc]")
+        complete(acc)
+      case Left(AccountExists(id)) =>
+        logger.error(s"Could not create an account [$account] with id [$id]: conflicting IDs")
+        complete((StatusCodes.InternalServerError, "Conflicting IDs"))
+    }
+  }
 }
