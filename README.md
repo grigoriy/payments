@@ -5,6 +5,9 @@
 Simple and to the point RESTful API (including data model and the backing
 implementation) for money transfers between accounts.
 
+### API docs
+[Documentation](https://grigoriy.github.io/payments-api/swagger.html)
+
 ### Compile, run tests and build an executable JAR:
 ```
 sbt test it:test assembly
