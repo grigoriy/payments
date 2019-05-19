@@ -37,5 +37,5 @@ $<project_dir> java -jar target/scala-2.12/payments-assembly-0.1.jar
 * the data must be available only while the app is running
 * transfers are internal and should be instant, synchronous
 * all money is in the same currency
-* no deposits, withdrawals, account details, transfer details are needed
+* deposits, withdrawals, account details are non-goals; account creation/retrieval and transfer retrieval are implemented for demonstrating and testing purposes
 * strict REST is not required
