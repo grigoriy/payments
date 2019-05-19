@@ -1,4 +1,4 @@
-package com.galekseev.payments.core.synched
+package com.galekseev.payments.core
 
 import java.util.UUID
 

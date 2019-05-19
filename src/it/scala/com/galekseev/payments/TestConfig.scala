@@ -5,9 +5,9 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{ExceptionHandler, Route}
-import com.galekseev.payments.core.synched._
+import com.galekseev.payments.core._
 import com.galekseev.payments.dto.{Account, AccountId, Transfer, TransferId}
-import com.galekseev.payments.storage.synched.Dao
+import com.galekseev.payments.storage.Dao
 import com.galekseev.payments.transport.{AccountRoutes, TransferRoutes}
 import com.typesafe.scalalogging.Logger
 

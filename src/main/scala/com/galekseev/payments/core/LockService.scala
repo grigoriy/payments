@@ -1,14 +1,15 @@
-package com.galekseev.payments.core.synched
+package com.galekseev.payments.core
 
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.{ ReadWriteLock, ReentrantReadWriteLock }
-import scala.collection.JavaConverters._
+import java.util.concurrent.locks.{ReadWriteLock, ReentrantReadWriteLock}
 
-import com.galekseev.payments.core.synched.LockService.LockType
+import com.galekseev.payments.core.LockService.LockType
+
+import scala.collection.JavaConverters._
 
 class LockService[A](implicit conv: A => Ordered[A]) {
 
-  import com.galekseev.payments.core.synched.LockService.LockType.{ Read, Write }
+  import com.galekseev.payments.core.LockService.LockType.{Read, Write}
 
   private val locks = new ConcurrentHashMap[A, ReadWriteLock]()
 

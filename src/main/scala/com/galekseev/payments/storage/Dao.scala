@@ -1,10 +1,11 @@
-package com.galekseev.payments.storage.synched
+package com.galekseev.payments.storage
 
 import java.util.concurrent.ConcurrentHashMap
 
-import com.galekseev.payments.core.synched.LockService
+import com.galekseev.payments.core.LockService
 import com.galekseev.payments.dto.HasId
 import com.typesafe.scalalogging.StrictLogging
+
 import scala.collection.JavaConverters._
 
 class Dao[A <: HasId[Id], Id](implicit lockService: LockService[Id]) extends StrictLogging {
