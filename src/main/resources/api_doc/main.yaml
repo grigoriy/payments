@@ -66,7 +66,7 @@ paths:
                 $ref: '#/components/schemas/Transfer'
 
     get:
-      summary: Get all money transfers
+      summary: Get all money transfers sorted by their processing timestamps, descending
       responses:
         '200':
           description: OK
@@ -131,12 +131,16 @@ components:
           $ref: '#/components/schemas/AmountInCents'
         status:
           $ref: '#/components/schemas/TransferStatus'
+        processingTimestamp:
+          type: string
+          format: 'date-time'
       required:
         - id
         - from
         - to
         - amount
         - status
+        - processingTimestamp
 
     TransferId:
       type: integer

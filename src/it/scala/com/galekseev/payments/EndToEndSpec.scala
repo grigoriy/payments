@@ -177,8 +177,8 @@ class EndToEndSpec
         ))
 
         checkTransfers(Seq(
-          insufficientFundsTransfer,
-          zeroTransfer
+          zeroTransfer,
+          insufficientFundsTransfer
         ))
       }
 
@@ -200,9 +200,9 @@ class EndToEndSpec
         ))
 
         checkTransfers(Seq(
-          insufficientFundsTransfer,
+          completedTransfer,
           zeroTransfer,
-          completedTransfer
+          insufficientFundsTransfer
         ))
       }
 

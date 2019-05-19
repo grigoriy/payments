@@ -70,5 +70,6 @@ class SynchronizedTransferService(
   override def get: Traversable[Transfer] =
     transferLockService.callWithAllReadLocks(() =>
       transferDao.get
+        .toSeq.sorted((x: Transfer, y: Transfer) => -x.processingTimestamp.compareTo(y.processingTimestamp))
     )
 }

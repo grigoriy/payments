@@ -1,5 +1,7 @@
 package com.galekseev.payments.dto
 
+import java.time.OffsetDateTime
+
 import com.galekseev.payments.dto.Transfer.Status
 import com.galekseev.payments.dto.Transfer.Status.Declined.InsufficientFunds
 import play.api.libs.json._
@@ -8,13 +10,14 @@ case class Transfer(id: TransferId,
                     from: AccountId,
                     to: AccountId,
                     amount: Amount,
-                    status: Status)
+                    status: Status,
+                    processingTimestamp: OffsetDateTime)
   extends HasId[TransferId]
 object Transfer {
 
   def fromRequest(request: TransferRequest, id: TransferId, status: Status): Transfer = {
     import request._
-    Transfer(id, from, to, amount, status)
+    Transfer(id, from, to, amount, status, OffsetDateTime.now())
   }
 
   sealed trait Status
